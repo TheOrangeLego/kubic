@@ -1,0 +1,12 @@
+# VS Code settings
+.vscode
+
+# node modules
+node_modules/
+
+# CPP files
+*.o
+*.hpp.gch
+
+# kubic binary
+kubic
