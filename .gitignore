@@ -8,5 +8,8 @@ node_modules/
 *.o
 *.hpp.gch
 
+# kubic files
+*.kbc
+
 # kubic binary
 kubic
