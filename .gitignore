@@ -8,8 +8,14 @@ node_modules/
 *.o
 *.hpp.gch
 
+# assembly files
+*.asm
+
 # kubic files
 *.kbc
 
-# kubic binary
+# assembly driver
+driver
+
+# kubic compiler binary
 kubic

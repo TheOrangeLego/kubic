@@ -1,9 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <string>
 #include <fstream>
 #include <sstream>
 
 #include "headers/tokenizer/tokenizer.hpp"
+
+const std::string ASM_KUBIC = "_kubic.asm";
 
 int main( int argc, char* argv[] ) {
   std::string inputString;
@@ -19,13 +22,15 @@ int main( int argc, char* argv[] ) {
   }
 
   std::vector<Token> tokens = tokenize( inputString );
-  std::cout << inputString << std::endl;
+  std::ofstream kubicASM( ASM_KUBIC );
 
-  for ( Token token : tokens ) {
-    std::cout << "Token ::" << std::endl;
-    std::cout << '\t' << token.getToken() << std::endl;
-    std::cout << "\t(" << token.getPositionLine() << ", " << token.getPositionCol() << ")" << std::endl;
-    std::cout << std::endl;
+  if ( kubicASM.is_open() ) {
+    kubicASM << "section .text" << std::endl;
+    kubicASM << "  global kubic_main" << std::endl;
+    kubicASM << "kubic_main:" << std::endl;
+    kubicASM << "  mov rax, 1010" << std::endl;
+    kubicASM << "  ret" << std::endl;
+    kubicASM.close();
   }
 
   return 0;
