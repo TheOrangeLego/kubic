@@ -1,6 +1,7 @@
 #ifndef _TREE_HPP
 #define _TREE_HPP
 
+#include <sstream>
 #include "../token/Token.hpp"
 
 class TreeNode {
@@ -9,7 +10,9 @@ class TreeNode {
   public:
     TreeNode( const Token _token ) : token( _token ) {}
 
-    Token getToken() const;
+    std::string getTokenString() const;
+    TokenType getTokenType() const;
+    TokenPosition getTokenPosition() const;
 
     virtual std::string print() const = 0;
 };

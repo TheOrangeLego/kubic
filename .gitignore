@@ -14,8 +14,8 @@ node_modules/
 # kubic files
 *.kbc
 
-# assembly driver
-driver
-
 # kubic compiler binary
-kubic
+kubic-c
+
+# kubic executable binary
+main

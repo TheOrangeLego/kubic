@@ -1,6 +1,9 @@
 CPP_COMPILER = g++
 ASM_COMPILER = nasm
-COMPILER   = kubic
+
+# generated binaries
+COMPILER = kubic-c
+DRIVER   = main
 
 # flags for g++ compiler
 CF_OBJECT = -c
@@ -13,24 +16,22 @@ AF_L32 = -f elf32
 
 COMPILER_SOURCE = headers/**/*.cpp
 COMPILER_PRE_CH = headers/**/*.hpp.gch
-COMPILER_OBJECTS  = $(subst driver.o, , *.o)
+COMPILER_OBJECTS = $(subst driver.o, , *.o)
 
-all: compiler driver
-.PHONY: all
-
-compiler: $(COMPILER_SOURCE) main.cpp
-	$(CPP_COMPILER) $(CF_ERRORS) $(CF_OBJECT) $(COMPILER_SOURCE) main.cpp
+compiler:
+	$(CPP_COMPILER) $(CF_ERRORS) $(CF_OBJECT) $(COMPILER_SOURCE) compiler.cpp
 	$(CPP_COMPILER) $(COMPILER_OBJECTS) $(CF_OUTPUT) $(COMPILER)
 
-driver: _kubic.asm driver.cpp
-	$(ASM_COMPILER) $(AF_L64) $(AF_OUTPUT) _kubic.asm
+driver:
+	$(ASM_COMPILER) $(AF_L64) $(AF_OUTPUT) main.asm
 	$(CPP_COMPILER) $(CF_ERRORS) $(CF_OBJECT) driver.cpp
-	$(CPP_COMPILER) $(CF_OUTPUT) driver driver.o _kubic.o
+	$(CPP_COMPILER) $(CF_OUTPUT) $(DRIVER) driver.o main.o
 
 clean-compiler:
 	$(RM) $(COMPILER_PRE_CH) $(COMPILER_OBJECTS)
 
 clean-driver:
-	$(RM) driver.o _kubic.o
+	$(RM) driver.o kubic.o
 
 clean: clean-compiler clean-driver
+	$(RM) $(COMPILER) $(DRIVER)

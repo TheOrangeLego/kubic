@@ -4,9 +4,10 @@
 #include <fstream>
 #include <sstream>
 
-#include "headers/tokenizer/tokenizer.hpp"
+#include "headers/tokenizer/Tokenizer.hpp"
+#include "headers/treeify/Treeify.hpp"
 
-const std::string ASM_KUBIC = "_kubic.asm";
+const std::string ASM_KUBIC = "main.asm";
 
 int main( int argc, char* argv[] ) {
   std::string inputString;
@@ -18,17 +19,19 @@ int main( int argc, char* argv[] ) {
     inputBuffer << inputFile.rdbuf();
     inputString = inputBuffer.str();
   } else {
-    inputString = "let _foo = \rbar in _foo + 100";
+    inputString = "1010";
   }
 
   std::vector<Token> tokens = tokenize( inputString );
+  TreeNode* root = treeify( tokens );
+
   std::ofstream kubicASM( ASM_KUBIC );
 
   if ( kubicASM.is_open() ) {
     kubicASM << "section .text" << std::endl;
     kubicASM << "  global kubic_main" << std::endl;
     kubicASM << "kubic_main:" << std::endl;
-    kubicASM << "  mov rax, 1010" << std::endl;
+    kubicASM << root->print();
     kubicASM << "  ret" << std::endl;
     kubicASM.close();
   }

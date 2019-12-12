@@ -2,6 +2,7 @@
 
 Token::Token( const std::string _token ) {
   this->token = _token;
+  setType( TokenType::Undefined );
   setPosition(
     DEFAULT_POSITION_LINE,
     DEFAULT_POSITION_COLUMN,
@@ -11,12 +12,16 @@ Token::Token( const std::string _token ) {
 
 Token::Token(
   const std::string _token,
-  const unsigned int _line,
-  const unsigned int _col,
-  const std::string _filename
+  const TokenType _type,
+  const unsigned int _line, const unsigned int _col, const std::string _filename
 ) {
   this->token = _token;
   setPosition( _line, _col, _filename );
+  setType( _type );
+}
+
+void Token::setType( const TokenType _type ) {
+  this->type = _type;
 }
 
 void Token::setPosition( const unsigned int _line, const unsigned int _col, const std::string _filename ) {
@@ -25,6 +30,10 @@ void Token::setPosition( const unsigned int _line, const unsigned int _col, cons
 
 std::string Token::getToken() const {
   return this->token;
+}
+
+TokenType Token::getType() const {
+  return this->type;
 }
 
 TokenPosition Token::getPosition() const {

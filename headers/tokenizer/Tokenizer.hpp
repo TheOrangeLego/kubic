@@ -5,30 +5,36 @@
 #include <vector>
 #include "../token/Token.hpp"
 
-const char WHITESPACE[] = {' ', '\t'};
-const char NEWLINE[] = {'\n', '\r'};
-const char OPERATORS[] = {'+', '-', '*', '/', '='};
-bool isWhitespace( const char _char ) {
-  for ( char whitespace : WHITESPACE ) {
-    if ( whitespace == _char ) {
-      return true;
-    }
+static const char WHITESPACES[] = {' ', '\t'};
+static const char NEWLINES[] = {'\n', '\r'};
+static const char OPERATORS[] = {'+', '-', '*', '/', '='};
+
+static const std::string KEYWORDS[] = {
+  "let",
+  "in"
+};
+
+static bool isWhitespace( const char _char ) {
+  bool matches = false;
+
+  for ( char whitespace : WHITESPACES ) {
+    matches = matches || whitespace == _char;
   }
 
-  return false;
+  return matches;
 }
 
-bool isNewline( const char _char ) {
-  for ( char newline : NEWLINE ) {
-    if ( newline == _char ) {
-      return true;
-    }
+static bool isNewline( const char _char ) {
+  bool matches = false;
+
+  for ( char newline : NEWLINES ) {
+    matches = matches || newline == _char;
   }
 
-  return false;
+  return matches;
 }
 
-bool isAlpha( const char _char ) {
+static bool isAlpha( const char _char ) {
   if ( _char >= 'a' && _char <= 'z' ) {
     return true;
   }
@@ -40,22 +46,38 @@ bool isAlpha( const char _char ) {
   return false;
 }
 
-bool isNumeric( const char _char ) {
+static bool isNumeric( const char _char ) {
   return _char >= '0' && _char <= '9';
 }
 
-bool isUnderscore( const char _char ) {
+static bool isUnderscore( const char _char ) {
   return _char == '_';
 }
 
-bool isOperator( const char _char ) {
+static bool isOperator( const char _char ) {
+  bool matches = false;
+
   for ( char operatorChar : OPERATORS ) {
-    if ( operatorChar == _char ) {
-      return true;
-    }
+    matches = matches || operatorChar == _char;
   }
 
-  return false;
+  return matches;
+}
+
+static TokenType deriveType( const std::string _token ) {
+  bool isVariable = false;
+
+  for ( unsigned int index = 0; index < _token.length(); index++ ) {
+    isVariable = isVariable || isAlpha( _token[index] ) || isUnderscore( _token[index] );
+  }
+
+  if ( isVariable ) {
+    return TokenType::Variable;
+  } else {
+    return TokenType::Constant;
+  }
+  
+  return TokenType::Undefined;
 }
 
 std::vector<Token> tokenize( const std::string _input ) {
@@ -87,7 +109,8 @@ std::vector<Token> tokenize( const std::string _input ) {
       }
 
       std::string tokenString = _input.substr( position - tokenLength, tokenLength );
-      Token newToken( tokenString, line + 1, col - tokenLength + 1, DEFAULT_FILENAME );
+      TokenType tokenType = deriveType( tokenString );
+      Token newToken( tokenString, tokenType, line + 1, col - tokenLength + 1, DEFAULT_FILENAME );
       tokens.push_back( newToken );
       tokenLength = 0;
 
@@ -102,7 +125,7 @@ std::vector<Token> tokenize( const std::string _input ) {
       }
 
       std::string tokenString = _input.substr( position - tokenLength, tokenLength );
-      Token newToken( tokenString, line + 1, col - tokenLength + 1, DEFAULT_FILENAME );
+      Token newToken( tokenString, TokenType::Undefined, line + 1, col - tokenLength + 1, DEFAULT_FILENAME );
       tokens.push_back( newToken );
       tokenLength = 0;
 
@@ -112,7 +135,8 @@ std::vector<Token> tokenize( const std::string _input ) {
 
   if ( tokenLength ) {
     std::string tokenString = _input.substr( position - tokenLength, tokenLength );
-    Token lastToken( tokenString, line + 1, col - tokenLength + 1, DEFAULT_FILENAME );
+    TokenType tokenType = deriveType( tokenString );
+    Token lastToken( tokenString, tokenType, line + 1, col - tokenLength + 1, DEFAULT_FILENAME );
     tokens.push_back( lastToken );
   }
 
