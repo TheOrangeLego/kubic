@@ -1,19 +1,27 @@
 #include "Tree.hpp"
 
-std::string TreeNode::getTokenString() const {
-  return this->token.getToken();
-}
-
-TokenType TreeNode::getTokenType() const {
-  return this->token.getType();
-}
-
-TokenPosition TreeNode::getTokenPosition() const {
-  return this->token.getPosition();
-}
-
 std::string ConstNode::print() const {
   std::stringstream output;
-  output << "  mov eax, " << getTokenString() << std::endl;
+
+  output << "  mov eax, " << constant.getToken() << std::endl;
+
+  return output.str();
+}
+
+std::string BinaryOperator::print() const {
+  std::stringstream output;
+
+  output << rightNode->print();
+  output << "  mov ebx, eax" << std::endl;
+  output << leftNode->print();
+  
+  if ( !op.compare( "+" ) ) {
+    output << "  add eax, ebx" << std::endl;
+  } else if ( !op.compare( "-" ) ) {
+    output << "  add eax, ebx" << std::endl;
+  } else {
+
+  }
+
   return output.str();
 }

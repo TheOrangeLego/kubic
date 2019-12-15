@@ -1,25 +1,34 @@
 #ifndef _TREE_HPP
 #define _TREE_HPP
 
+#include <string>
 #include <sstream>
 #include "../token/Token.hpp"
 
 class TreeNode {
-  protected:
-    Token token;
   public:
-    TreeNode( const Token _token ) : token( _token ) {}
-
-    std::string getTokenString() const;
-    TokenType getTokenType() const;
-    TokenPosition getTokenPosition() const;
-
-    virtual std::string print() const = 0;
+     virtual std::string print() const = 0;
 };
 
 class ConstNode : public TreeNode {
+  protected:
+    Token constant;
+  
   public:
-    ConstNode( const Token _token ) : TreeNode( _token ) {}
+    ConstNode( const Token _token ) : constant( _token ) {}
+
+    std::string print() const;
+};
+
+class BinaryOperator : public TreeNode {
+  protected:
+    TreeNode* leftNode;
+    TreeNode* rightNode;
+    std::string op;
+  
+  public:
+    BinaryOperator( TreeNode* _lNode, TreeNode* _rNode, const std::string _op ) :
+      leftNode( _lNode ), rightNode( _rNode ), op( _op ) {}
 
     std::string print() const;
 };

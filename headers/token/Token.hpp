@@ -29,6 +29,7 @@ class Token {
 
   public:
     Token( const std::string _token );
+
     Token(
       const std::string _token,
       const TokenType _type,
@@ -42,10 +43,15 @@ class Token {
     );
 
     std::string getToken() const;
+
     TokenType getType() const;
+
     TokenPosition getPosition() const;
+
     unsigned int getPositionLine() const;
+
     unsigned int getPositionCol() const;
+
     std::string getFilename() const;
 };
 

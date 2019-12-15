@@ -7,7 +7,21 @@
 
 static const char WHITESPACES[] = {' ', '\t'};
 static const char NEWLINES[] = {'\n', '\r'};
-static const char OPERATORS[] = {'+', '-', '*', '/', '='};
+
+static const char OPERATORS_CHARS[] = {
+  '+',
+  '-',
+  '*',
+  '/',
+  '='
+};
+
+static const std::string OPERATORS[] = {
+  "+",
+  "-",
+  "*",
+  "/"
+};
 
 static const std::string KEYWORDS[] = {
   "let",
