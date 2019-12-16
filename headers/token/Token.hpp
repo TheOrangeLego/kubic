@@ -11,8 +11,8 @@ enum TokenType {
   Undefined,
   Constant,
   Variable,
-  KeywordLet,
-  KeywordIn
+  Operator,
+  Keyword
 };
 
 typedef struct {
