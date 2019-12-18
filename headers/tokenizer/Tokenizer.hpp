@@ -128,6 +128,10 @@ static Token tokenizeNumber( const std::string _input, const unsigned int _line,
       currentChar = _input[++_position];
     }
 
+    if ( isAlpha( currentChar ) ) {
+      return tokenizeUndefined( _input, _line, _col, _position, _tokenLength, _inputLength );
+    }
+
     if ( !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
       return tokenizeUndefined( _input, _line, _col, _position, _tokenLength, _inputLength );
     }

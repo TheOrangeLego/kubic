@@ -36,5 +36,7 @@ int main( int argc, char* argv[] ) {
     kubicASM.close();
   }
 
+  delete root;
+
   return 0;
 }

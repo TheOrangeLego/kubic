@@ -6,16 +6,29 @@
 #include "../token/Token.hpp"
 
 class TreeNode {
+  protected:
+    std::stringstream* representation;
+
   public:
-     virtual std::string print() const = 0;
+    TreeNode() {
+      representation = new std::stringstream();
+    }
+
+    virtual ~TreeNode() {
+      if ( representation ) delete representation;
+    }
+
+    virtual std::string print() const = 0;
 };
 
 class ConstNode : public TreeNode {
   protected:
-    Token constant;
+    Token constantNode;
   
   public:
-    ConstNode( const Token _token ) : constant( _token ) {}
+    ConstNode( const Token _token ) : constantNode( _token ) {}
+
+    ~ConstNode() {}
 
     std::string print() const;
 };
@@ -25,10 +38,15 @@ class BinaryOperator : public TreeNode {
     TreeNode* leftNode;
     TreeNode* rightNode;
     std::string op;
-  
+
   public:
     BinaryOperator( TreeNode* _lNode, TreeNode* _rNode, const std::string _op ) :
       leftNode( _lNode ), rightNode( _rNode ), op( _op ) {}
+
+    ~BinaryOperator() {
+      if ( leftNode ) delete leftNode;
+      if ( rightNode ) delete rightNode;
+    }
 
     std::string print() const;
 };
