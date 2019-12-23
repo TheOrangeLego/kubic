@@ -2,7 +2,7 @@
 #define _TOKENIZER_HPP
 
 #include <string>
-#include <vector>
+#include <queue>
 #include "../token/Token.hpp"
 
 static const char WHITESPACE_CHARS[] = {
@@ -132,7 +132,7 @@ static Token tokenizeNumber( const std::string _input, const unsigned int _line,
       return tokenizeUndefined( _input, _line, _col, _position, _tokenLength, _inputLength );
     }
 
-    if ( !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
+    if ( _position < _inputLength && !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
       return tokenizeUndefined( _input, _line, _col, _position, _tokenLength, _inputLength );
     }
 
@@ -153,7 +153,7 @@ static Token tokenizeVariable( const std::string _input, const unsigned int _lin
     currentChar = _input[++_position];
   }
 
-  if ( !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
+  if ( _position < _inputLength && !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
     return tokenizeUndefined( _input, _line, _col, _position, _tokenLength, _inputLength );
   }
 
@@ -177,7 +177,7 @@ static Token tokenizeKeyword( const std::string _input, const unsigned int _line
     return tokenizeVariable( _input, _line, _col, _position, _tokenLength, _inputLength );
   }
 
-  if ( !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
+  if ( _position < _inputLength && !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
     return tokenizeUndefined( _input, _line, _col, _position, _tokenLength, _inputLength );
   }
 
@@ -187,13 +187,13 @@ static Token tokenizeKeyword( const std::string _input, const unsigned int _line
   return token;
 }
 
-std::vector<Token> tokenize( const std::string _input ) {
+std::queue<Token> tokenize( const std::string _input ) {
   unsigned int line = 0;
   unsigned int col = 0;
   unsigned int position = 0;
   unsigned int tokenLength = 0;
   unsigned int inputLength = _input.length();
-  std::vector<Token> tokens;
+  std::queue<Token> tokens;
 
   while ( position < inputLength ) {
     char currentChar = _input[position];
@@ -213,14 +213,14 @@ std::vector<Token> tokenize( const std::string _input ) {
           : isUnderScore( currentChar )
             ? tokenizeVariable( _input, line, col, position, tokenLength, inputLength )
             : tokenizeKeyword( _input, line, col, position, tokenLength, inputLength );
-      tokens.push_back( token );
+      tokens.push( token );
     }
   }
 
   if ( tokenLength ) {
     std::string tokenString = _input.substr( position - tokenLength, tokenLength );
     Token lastToken( tokenString, TokenType::Undefined, line, col - tokenLength, DEFAULT_FILENAME );
-    tokens.push_back( lastToken );
+    tokens.push( lastToken );
   }
 
   return tokens;

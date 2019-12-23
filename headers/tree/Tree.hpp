@@ -35,13 +35,13 @@ class ConstNode : public TreeNode {
 
 class BinaryOperator : public TreeNode {
   protected:
+    Token op;
     TreeNode* leftNode;
     TreeNode* rightNode;
-    std::string op;
 
   public:
-    BinaryOperator( TreeNode* _lNode, TreeNode* _rNode, const std::string _op ) :
-      leftNode( _lNode ), rightNode( _rNode ), op( _op ) {}
+    BinaryOperator( const Token _op, TreeNode* _lNode, TreeNode* _rNode ) :
+      op( _op ), leftNode( _lNode ), rightNode( _rNode ) {}
 
     ~BinaryOperator() {
       if ( leftNode ) delete leftNode;
