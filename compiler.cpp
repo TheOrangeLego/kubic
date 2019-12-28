@@ -1,11 +1,10 @@
-#include <iostream>
 #include <queue>
 #include <string>
 #include <fstream>
 #include <sstream>
 
-#include "headers/tokenizer/Tokenizer.hpp"
-#include "headers/treeify/Treeify.hpp"
+#include "headers/tokenize.hpp"
+#include "headers/treeify.hpp"
 
 const std::string ASM_KUBIC = "main.asm";
 
@@ -36,7 +35,7 @@ int main( int argc, char* argv[] ) {
     kubicASM.close();
   }
 
-  delete root;
+  if ( root ) delete root;
 
   return 0;
 }

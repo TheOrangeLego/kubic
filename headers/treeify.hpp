@@ -1,20 +1,16 @@
 #ifndef _TREEIFY_HPP
 #define _TREEIFY_HPP
 
-#include <map>
 #include <queue>
 #include <stack>
 #include <string>
-#include "../token/Token.hpp"
-#include "../tree/Tree.hpp"
 
-static std::map<std::string, int> operatorPriorities = {
-  {"+", 2}, {"-", 2},
-  {"*", 3}, {"/", 3}
-};
+#include "rules.hpp"
+#include "token/Token.hpp"
+#include "tree/Tree.hpp"
 
 static bool hasHigherPriority( const Token _tokenA, const Token _tokenB ) {
-  return operatorPriorities[_tokenA.getToken()]> operatorPriorities[_tokenB.getToken()];
+  return OPERATOR_PRIORITIES[_tokenA.getToken()]> OPERATOR_PRIORITIES[_tokenB.getToken()];
 }
 
 static std::stack<Token> organizeArithmetic( std::queue<Token>& _tokens ) {
@@ -68,7 +64,11 @@ static TreeNode* treeifyArithmetic( std::stack<Token>& _tokens ) {
     return nullptr;
   } else if ( currentToken.getType() == TokenType::Operator ) {
     _tokens.pop();
-    return new BinaryOperator( currentToken, treeifyArithmetic( _tokens ), treeifyArithmetic( _tokens ) );
+
+    /* as operands are retrieved backwards when parsed, place them back in order when treeifying */
+    TreeNode* rightNode = treeifyArithmetic( _tokens );
+    TreeNode* leftNode  = treeifyArithmetic( _tokens );
+    return new BinaryOperator( currentToken, leftNode, rightNode );
   } else {
     return nullptr;
   }
@@ -90,6 +90,9 @@ TreeNode* treeify( std::queue<Token>& _tokens ) {
       case TokenType::Constant:
       case TokenType::Variable:
         node = treeifyArithmetic( _tokens );
+        break;
+      case TokenType::Keyword:
+        
         break;
       case TokenType::Undefined:
         break;

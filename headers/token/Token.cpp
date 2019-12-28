@@ -1,23 +1,19 @@
 #include "Token.hpp"
 
-Token::Token( const std::string _token ) {
-  this->token = _token;
-  setType( TokenType::Undefined );
-  setPosition(
-    DEFAULT_POSITION_LINE,
-    DEFAULT_POSITION_COLUMN,
-    DEFAULT_FILENAME
-  );
-}
-
 Token::Token(
   const std::string _token,
   const TokenType _type,
-  const unsigned int _line, const unsigned int _col, const std::string _filename
+  const unsigned int _line,
+  const unsigned int _col,
+  const std::string _filename
 ) {
-  this->token = _token;
+  setToken( _token );
   setPosition( _line, _col, _filename );
   setType( _type );
+}
+
+void Token::setToken( const std::string _token ) {
+  this->token = _token;
 }
 
 void Token::setType( const TokenType _type ) {

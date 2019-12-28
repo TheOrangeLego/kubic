@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+
 #include "../token/Token.hpp"
 
 class TreeNode {
@@ -29,6 +30,22 @@ class ConstNode : public TreeNode {
     ConstNode( const Token _token ) : constantNode( _token ) {}
 
     ~ConstNode() {}
+
+    std::string print() const;
+};
+
+class UnaryOperator : public TreeNode {
+  protected:
+    Token op;
+    TreeNode* node;
+
+  public:
+    UnaryOperator( const Token _op, TreeNode* _node ) :
+      op( _op ), node( _node ) {}
+    
+    ~UnaryOperator() {
+      if ( node ) delete node;
+    }
 
     std::string print() const;
 };

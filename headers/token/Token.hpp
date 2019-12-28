@@ -28,15 +28,16 @@ class Token {
     TokenPosition position;
 
   public:
-    Token( const std::string _token );
-
     Token(
       const std::string _token,
-      const TokenType _type,
-      const unsigned int _line, const unsigned int _col, const std::string _filename
-    );
+      const TokenType _type = TokenType::Undefined,
+      const unsigned int _line = DEFAULT_POSITION_LINE,
+      const unsigned int _col  = DEFAULT_POSITION_COLUMN,
+      const std::string _filename = DEFAULT_FILENAME );
 
-    void setType( TokenType _type );
+    void setToken( const std::string _token );
+
+    void setType( const TokenType _type );
 
     void setPosition(
       const unsigned int _line, const unsigned int _col, const std::string _filename
