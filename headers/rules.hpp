@@ -9,7 +9,7 @@ const std::string WHITESPACE_CHARS = " \t";
 
 const std::string NEWLINE_CHARS = "\n\r";
 
-const std::string OPERATOR_CHARS = "+-*/<>=.:";
+const std::string OPERATOR_CHARS = "+-*/<>=.:()";
 
 const std::string GROUP_CHARS = "()[]";
 
@@ -22,7 +22,7 @@ const std::set<std::string> UNARY_OPERATORS {
 };
 
 const std::set<std::string> BINARY_OPERATORS {
-  "+", "-", "*", "/", "%", "**", "//"
+  "=", "+", "-", "*", "/", "%", "**", "//"
 };
 
 std::map<std::string, int> OPERATOR_PRIORITIES = {

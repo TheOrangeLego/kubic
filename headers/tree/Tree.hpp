@@ -19,7 +19,7 @@ class TreeNode {
       if ( representation ) delete representation;
     }
 
-    virtual std::string print() const = 0;
+    virtual std::string print( const unsigned int _stackOffset ) const = 0;
 };
 
 class ConstNode : public TreeNode {
@@ -31,7 +31,7 @@ class ConstNode : public TreeNode {
 
     ~ConstNode() {}
 
-    std::string print() const;
+    std::string print( const unsigned int _stackOffset ) const;
 };
 
 class UnaryOperator : public TreeNode {
@@ -47,7 +47,7 @@ class UnaryOperator : public TreeNode {
       if ( node ) delete node;
     }
 
-    std::string print() const;
+    std::string print( const unsigned int _stackOffset ) const;
 };
 
 class BinaryOperator : public TreeNode {
@@ -65,7 +65,7 @@ class BinaryOperator : public TreeNode {
       if ( rightNode ) delete rightNode;
     }
 
-    std::string print() const;
+    std::string print( const unsigned int _stackOffset ) const;
 };
 
 #endif

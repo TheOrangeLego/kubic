@@ -30,7 +30,8 @@ int main( int argc, char* argv[] ) {
     kubicASM << "section .text" << std::endl;
     kubicASM << "  global kubic_main" << std::endl << std::endl;
     kubicASM << "kubic_main:" << std::endl;
-    kubicASM << root->print();
+    kubicASM << root->print( 0 );
+    kubicASM << "  mov rax, [rsi]" << std::endl;
     kubicASM << "  ret" << std::endl;
     kubicASM.close();
   }

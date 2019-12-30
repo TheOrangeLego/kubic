@@ -17,16 +17,32 @@ static std::stack<Token> organizeArithmetic( std::queue<Token>& _tokens ) {
   std::stack<Token> outputStack;
   std::stack<Token> operatorStack;
   Token currentToken = _tokens.front();
+  Token currentOperator( "" );
 
   while ( !_tokens.empty() && (
           currentToken.getType() == TokenType::Constant ||
           currentToken.getType() == TokenType::Variable ||
+          currentToken.getType() == TokenType::LeftGroup  ||
+          currentToken.getType() == TokenType::RightGroup ||
           currentToken.getType() == TokenType::Operator ) ) {
     
     switch ( currentToken.getType() ) {
       case TokenType::Constant:
       case TokenType::Variable:
         outputStack.push( currentToken );
+        break;
+      case TokenType::LeftGroup:
+        operatorStack.push( currentToken );
+        break;
+      case TokenType::RightGroup:
+        currentOperator = operatorStack.top();
+        operatorStack.pop();
+
+        while ( currentOperator.getType() != TokenType::LeftGroup ) {
+          outputStack.push( currentOperator );
+          currentOperator = operatorStack.top();
+          operatorStack.pop();
+        }
         break;
       case TokenType::Operator:
         while ( !operatorStack.empty() && !hasHigherPriority( currentToken, operatorStack.top() ) ) {
@@ -89,6 +105,7 @@ TreeNode* treeify( std::queue<Token>& _tokens ) {
     switch ( currentToken.getType() ) {
       case TokenType::Constant:
       case TokenType::Variable:
+      case TokenType::LeftGroup: // TODO - this should check whether the next token is a constant / variable -> arithmetic; o/w recurse
         node = treeifyArithmetic( _tokens );
         break;
       case TokenType::Keyword:

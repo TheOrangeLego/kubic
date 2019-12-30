@@ -75,6 +75,15 @@ static Token tokenizeItem( const std::string _input, const unsigned int _line, u
   const TokenType _type ) {
   char currentChar = _input[_position];
 
+  if ( currentChar == '(' || currentChar == ')' ) {
+    std::string tokenString( 1, currentChar );
+    TokenType type = currentChar == '(' ? TokenType::LeftGroup : TokenType::RightGroup;
+    _col++;
+    _position++;
+
+    return Token( tokenString, type, _line, _col, DEFAULT_FILENAME );
+  }
+
   while ( _position < _inputLength && parsingConditions[_type]( currentChar ) ) {
     _tokenLength++;
     _col++;
@@ -85,7 +94,7 @@ static Token tokenizeItem( const std::string _input, const unsigned int _line, u
     return tokenizeItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Variable );
   }
   
-  if ( _position < _inputLength &&
+  if ( _type != TokenType::Operator && _position < _inputLength &&
        !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
     return tokenizeItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Undefined );
   }
