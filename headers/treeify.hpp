@@ -19,13 +19,10 @@ static std::stack<Token> organizeArithmetic( std::queue<Token>& _tokens ) {
   Token currentToken = _tokens.front();
   Token currentOperator( "" );
 
-  while ( !_tokens.empty() && (
-          currentToken.getType() == TokenType::Constant ||
-          currentToken.getType() == TokenType::Variable ||
-          currentToken.getType() == TokenType::LeftGroup  ||
-          currentToken.getType() == TokenType::RightGroup ||
-          currentToken.getType() == TokenType::Operator ) ) {
-    
+  while ( !_tokens.empty() && ( currentToken.getType() == TokenType::Operator ||
+    currentToken.getType() == TokenType::Constant || currentToken.getType() == TokenType::Variable ||
+    currentToken.getType() == TokenType::LeftGroup  || currentToken.getType() == TokenType::RightGroup ) ) {
+
     switch ( currentToken.getType() ) {
       case TokenType::Constant:
       case TokenType::Variable:
@@ -96,6 +93,26 @@ static TreeNode* treeifyArithmetic( std::queue<Token>& _tokens ) {
   return treeifyArithmetic( organizedStack );
 }
 
+static TreeNode* treeifyBinding( std::queue<Token>& _tokens ) {
+  _tokens.pop();
+
+  Token variableToken = _tokens.front();
+  _tokens.pop();
+
+  Token currentToken = _tokens.front();
+  std::queue<Token> bindingTokens;
+
+  while ( !_tokens.empty() && !equals( currentToken.getToken(), "::" ) ) {
+    bindingTokens.push( currentToken );
+    _tokens.pop();
+    currentToken = _tokens.front();
+  }
+
+  _tokens.pop();
+
+  return new BindingNode( variableToken, treeify( bindingTokens ), treeify( _tokens ) );
+}
+
 TreeNode* treeify( std::queue<Token>& _tokens ) {
   TreeNode* node = nullptr;
 
@@ -105,7 +122,7 @@ TreeNode* treeify( std::queue<Token>& _tokens ) {
     switch ( currentToken.getType() ) {
       case TokenType::Constant:
       case TokenType::Variable:
-      case TokenType::LeftGroup: // TODO - this should check whether the next token is a constant / variable -> arithmetic; o/w recurse
+      case TokenType::LeftGroup:
         node = treeifyArithmetic( _tokens );
         break;
       case TokenType::Keyword:
