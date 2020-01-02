@@ -18,11 +18,12 @@ int main( int argc, char* argv[] ) {
     inputBuffer << inputFile.rdbuf();
     inputString = inputBuffer.str();
   } else {
-    inputString = "1010";
+    inputString = "let x = 3 :: x";
   }
 
   std::queue<Token> tokens = tokenize( inputString );
   TreeNode* root = treeify( tokens );
+  EnvironmentMap bindings;
 
   std::ofstream kubicASM( ASM_KUBIC );
 
@@ -30,8 +31,7 @@ int main( int argc, char* argv[] ) {
     kubicASM << "section .text" << std::endl;
     kubicASM << "  global kubic_main" << std::endl << std::endl;
     kubicASM << "kubic_main:" << std::endl;
-    kubicASM << root->print( 0 );
-    kubicASM << "  mov rax, [rsi]" << std::endl;
+    kubicASM << root->compile( 0, bindings );
     kubicASM << "  ret" << std::endl;
     kubicASM.close();
   }

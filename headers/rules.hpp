@@ -18,16 +18,15 @@ const std::set<std::string> KEYWORDS {
 };
 
 const std::set<std::string> UNARY_OPERATORS {
-  "!", ":", "++", "--"
+  "!", "++", "--"
 };
 
 const std::set<std::string> BINARY_OPERATORS {
-  "=", "+", "-", "*", "/", "%", "**", "//"
+  "+", "-", "*", "/", "%", "**", "//"
 };
 
 std::map<std::string, int> OPERATOR_PRIORITIES = {
   {"(", 0}, {")", 0}, {"{", 0}, {"}", 0},
-  {"=", 1},
   {"+", 2}, {"-", 2},
   {"*", 3}, {"/", 3}
 };

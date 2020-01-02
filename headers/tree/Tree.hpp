@@ -3,8 +3,11 @@
 
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "../token/Token.hpp"
+
+typedef std::vector<std::pair<std::string, unsigned int>> EnvironmentMap;
 
 class TreeNode {
   protected:
@@ -19,19 +22,31 @@ class TreeNode {
       if ( representation ) delete representation;
     }
 
-    virtual std::string compile( const unsigned int _stackOffset ) const = 0;
+    virtual std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const = 0;
 };
 
-class ConstNode : public TreeNode {
+class ConstantNode : public TreeNode {
   protected:
-    Token constantNode;
+    Token constant;
   
   public:
-    ConstNode( const Token _token ) : constantNode( _token ) {}
+    ConstantNode( const Token _token ) : constant( _token ) {}
 
-    ~ConstNode() {}
+    ~ConstantNode() {}
 
-    std::string compile( const unsigned int _stackOffset ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
+};
+
+class VariableNode : public TreeNode {
+  protected:
+    Token variable;
+
+  public:
+    VariableNode( const Token _token ) : variable( _token ) {}
+
+    ~VariableNode() {}
+
+    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
 class UnaryOperator : public TreeNode {
@@ -47,7 +62,7 @@ class UnaryOperator : public TreeNode {
       if ( node ) delete node;
     }
 
-    std::string compile( const unsigned int _stackOffset ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
 class BinaryOperator : public TreeNode {
@@ -65,7 +80,7 @@ class BinaryOperator : public TreeNode {
       if ( rightNode ) delete rightNode;
     }
 
-    std::string compile( const unsigned int _stackOffset ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
 class BindingNode : public TreeNode {
@@ -83,7 +98,7 @@ class BindingNode : public TreeNode {
       if ( bodyNode ) delete bodyNode;
     }
 
-    std::string compile( const unsigned int _stackOffset ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
 #endif

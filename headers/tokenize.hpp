@@ -42,8 +42,7 @@ static bool isOperator( const char _char ) {
 
 static bool parsingConstant( const char _char ) {
   return isNumeric( _char ) || _char == 'x' || _char == 'o' ||
-    ( _char >= 'a' && _char <= 'z' ) ||
-    ( _char >= 'A' && _char <= 'Z' );
+    ( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' );
 }
 
 static bool parsingVariable( const char _char ) {

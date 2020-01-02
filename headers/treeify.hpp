@@ -9,6 +9,8 @@
 #include "token/Token.hpp"
 #include "tree/Tree.hpp"
 
+TreeNode* treeify( std::queue<Token>& _tokens );
+
 static bool hasHigherPriority( const Token _tokenA, const Token _tokenB ) {
   return OPERATOR_PRIORITIES[_tokenA.getToken()]> OPERATOR_PRIORITIES[_tokenB.getToken()];
 }
@@ -72,9 +74,10 @@ static TreeNode* treeifyArithmetic( std::stack<Token>& _tokens ) {
 
   if ( currentToken.getType() == TokenType::Constant ) {
     _tokens.pop();
-    return new ConstNode( currentToken );
+    return new ConstantNode( currentToken );
   } else if ( currentToken.getType() == TokenType::Variable ) {
-    return nullptr;
+    _tokens.pop();
+    return new VariableNode( currentToken );
   } else if ( currentToken.getType() == TokenType::Operator ) {
     _tokens.pop();
 
@@ -97,6 +100,8 @@ static TreeNode* treeifyBinding( std::queue<Token>& _tokens ) {
   _tokens.pop();
 
   Token variableToken = _tokens.front();
+  _tokens.pop();
+
   _tokens.pop();
 
   Token currentToken = _tokens.front();
@@ -126,7 +131,7 @@ TreeNode* treeify( std::queue<Token>& _tokens ) {
         node = treeifyArithmetic( _tokens );
         break;
       case TokenType::Keyword:
-        
+        node = treeifyBinding( _tokens );
         break;
       case TokenType::Undefined:
         break;

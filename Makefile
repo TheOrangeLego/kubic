@@ -21,7 +21,7 @@ COMPILER_PRE_CH = headers/**/*.hpp.gch
 COMPILER_OBJECTS = $(subst driver.o, , *.o)
 
 compiler:
-	$(CPP_COMPILER) $(CF_ERRORS) $(CF_OBJECT) $(COMPILER_SOURCE) compiler.cpp
+	$(CPP_COMPILER) $(CF_ERRORS) $(CF_DEBUG) $(CF_OBJECT) $(COMPILER_SOURCE) compiler.cpp
 	$(CPP_COMPILER) $(COMPILER_OBJECTS) $(CF_OUTPUT) $(COMPILER)
 
 driver:
