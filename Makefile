@@ -1,3 +1,4 @@
+# compilers
 CPP_COMPILER = g++
 ASM_COMPILER = nasm
 
@@ -13,12 +14,17 @@ CF_ERRORS = -Wall -Wextra -Wsign-conversion
 
 # flags for nasm compiler
 AF_L64 = -f elf64
-AF_L32 = -f elf32
 AF_DEBUG = -g
 
+# CPP sources and generated objects
 COMPILER_SOURCE = headers/**/*.cpp
 COMPILER_PRE_CH = headers/**/*.hpp.gch
 COMPILER_OBJECTS = $(subst driver.o, , *.o)
+
+# KBC main
+MAIN_KBC = main.kbc
+
+all: compiler generate-main driver
 
 compiler:
 	$(CPP_COMPILER) $(CF_ERRORS) $(CF_DEBUG) $(CF_OBJECT) $(COMPILER_SOURCE) compiler.cpp
@@ -28,6 +34,9 @@ driver:
 	$(ASM_COMPILER) $(AF_L64) $(AF_DEBUG) $(AF_OUTPUT) main.asm
 	$(CPP_COMPILER) $(CF_ERRORS) $(CF_DEBUG) $(CF_OBJECT) driver.cpp
 	$(CPP_COMPILER) $(CF_OUTPUT) $(DRIVER) driver.o main.o
+
+generate-main:
+	./$(COMPILER) $(MAIN_KBC)
 
 clean-compiler:
 	$(RM) $(COMPILER_PRE_CH) $(COMPILER_OBJECTS)

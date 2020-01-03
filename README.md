@@ -14,4 +14,3 @@ operations
 #### Requirements
 The following are requirements to compile the `Kubic` project
 *  CPP Boost Library
-

@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <boost/format.hpp>
 
 #include "../token/Token.hpp"
 

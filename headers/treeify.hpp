@@ -54,7 +54,9 @@ static std::stack<Token> organizeArithmetic( std::queue<Token>& _tokens ) {
         break;
     }
     _tokens.pop();
-    currentToken = _tokens.front();
+
+    /* this will quiet down Valgrind, will need to check for this error in the future */
+    if ( !_tokens.empty() ) currentToken = _tokens.front();
   }
 
   while ( !operatorStack.empty() ) {
