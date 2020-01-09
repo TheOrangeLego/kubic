@@ -3,6 +3,11 @@
 extern "C" int kubic_main( void );
 
 void error( unsigned int _errorNumber ) {
+  switch( _errorNumber ) {
+    default:
+      break;
+  }
+
   exit( 1 );
 }
 

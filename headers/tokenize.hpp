@@ -76,7 +76,7 @@ static Token tokenizeItem( const std::string _input, const unsigned int _line, u
 
   if ( currentChar == '(' || currentChar == ')' ) {
     std::string tokenString( 1, currentChar );
-    TokenType type = currentChar == '(' ? TokenType::LeftGroup : TokenType::RightGroup;
+    TokenType type = currentChar == '(' ? TokenType::LeftParenthesis : TokenType::RightParenthesis;
     _col++;
     _position++;
 

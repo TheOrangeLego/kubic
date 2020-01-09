@@ -12,8 +12,8 @@ enum TokenType {
   Constant,
   Variable,
   Operator,
-  LeftGroup,
-  RightGroup,
+  LeftParenthesis,
+  RightParenthesis,
   Keyword
 };
 

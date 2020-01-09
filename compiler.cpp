@@ -1,3 +1,4 @@
+#include <stack>
 #include <queue>
 #include <string>
 #include <fstream>
@@ -5,6 +6,7 @@
 #include <iostream>
 #include <boost/format.hpp>
 
+#include "headers/messages.hpp"
 #include "headers/helpers.hpp"
 #include "headers/tokenize.hpp"
 #include "headers/treeify.hpp"
@@ -12,17 +14,17 @@
 const std::string ASM_KUBIC = "main.asm";
 
 const std::string MSG_USAGE = "\
-Usage:\n\
-  kubic-c [--options] <KBC entry file>\n\
-\n\
-Options:\n\
-  -v | --version\tReturn the compiler version\n\
-  -h | --help\t\tPrints this message\n\
-  -l | --log\tPrint debugging statements during compilation\
+  Usage:\n\
+    kubic-c [--options] <KBC entry file>\n\
+  \n\
+  Options:\n\
+    -v | --version\tReturn the compiler version\n\
+    -h | --help\t\tPrints this message\n\
+    -l | --log\tPrint debugging statements during compilation\
 ";
 
 const std::string ERR_INVALID_OPTION = "\
-Invalid option %1% provided. Use the -h | --help option to view all valid options.\
+  Invalid option %1% provided. Use the -h | --help option to view all valid options.\
 ";
 
 static std::string entryFile = "";
@@ -57,7 +59,27 @@ int main( int _argc, char* _argv[] ) {
   inputString = inputBuffer.str();
 
   std::queue<Token> tokens = tokenize( inputString );
-  TreeNode* root = treeify( tokens );
+  std::stack<TokenError> errors;
+  TreeNode* root = treeify( tokens, errors );
+
+  if ( !errors.empty() ) {
+    std::cout << "Kubic encountered the following compiler errors ::" << std::endl;
+
+    while ( !errors.empty() ) {
+      TokenError topError = errors.top();
+      std::string filename = topError.first.getFilename();
+      unsigned int line = topError.first.getPositionLine();
+      unsigned int column = topError.first.getPositionCol();
+      std::string errorMessage = topError.second;
+
+      std::cout << boost::format( "  at %1% ( %2%, %3% ) - %4%\n" ) % filename % line % column % errorMessage;
+      errors.pop();
+    }
+
+    if ( root ) delete root;
+
+    return 1;
+  }
   EnvironmentMap bindings;
 
   std::ofstream kubicASM( ASM_KUBIC );

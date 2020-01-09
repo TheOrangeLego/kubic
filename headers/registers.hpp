@@ -9,7 +9,7 @@ enum Register {
   /* general purpose */
   RAX, RBX, RCX, RDX,
 
-  /* register indices */
+  /* index registers */
   RSI, RDI,
 
   /* stack frame */
