@@ -1,32 +1,29 @@
-#ifndef _TREE_HPP
-#define _TREE_HPP
+#ifndef _NODE_HPP
+#define _NODE_HPP
 
 #include <string>
 #include <sstream>
 #include <vector>
-#include <boost/format.hpp>
 
 #include "../token/Token.hpp"
 
 typedef std::vector<std::pair<std::string, unsigned int>> EnvironmentMap;
 
-class TreeNode {
+class Node{
   protected:
     std::stringstream* representation;
 
   public:
-    TreeNode() {
-      representation = new std::stringstream();
-    }
+    Node() { representation = new std::stringstream(); }
 
-    virtual ~TreeNode() {
+    virtual ~Node() {
       if ( representation ) delete representation;
     }
 
     virtual std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const = 0;
 };
 
-class ConstantNode : public TreeNode {
+class ConstantNode : public Node {
   protected:
     Token constant;
   
@@ -38,10 +35,10 @@ class ConstantNode : public TreeNode {
     std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
-class VariableNode : public TreeNode {
+class VariableNode : public Node {
   protected:
     Token variable;
-
+  
   public:
     VariableNode( const Token _token ) : variable( _token ) {}
 
@@ -50,53 +47,52 @@ class VariableNode : public TreeNode {
     std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
-class UnaryOperator : public TreeNode {
+class UnaryOperatorNode : public Node {
   protected:
-    Token op;
-    TreeNode* node;
+    Token operate;
+    Node* operand;
+  
+  public:
+    UnaryOperatorNode( const Token _token, Node* _operand ) : operate( _token ), operand( _operand ) {}
+
+    ~UnaryOperatorNode() {
+      if ( operand ) delete operand;
+    }
+
+    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
+};
+
+class BinaryOperatorNode : public Node {
+  protected:
+    Token operate;
+    Node* lOperand;
+    Node* rOperand;
 
   public:
-    UnaryOperator( const Token _op, TreeNode* _node ) :
-      op( _op ), node( _node ) {}
+    BinaryOperatorNode( const Token _token, Node* _lOperand, Node* _rOperand ) :
+      operate( _token ), lOperand( _lOperand ), rOperand( _rOperand ) {}
     
-    ~UnaryOperator() {
-      if ( node ) delete node;
+    ~BinaryOperatorNode() {
+      if ( lOperand ) delete lOperand;
+      if ( rOperand ) delete rOperand;
     }
 
     std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
 };
 
-class BinaryOperator : public TreeNode {
-  protected:
-    Token op;
-    TreeNode* leftNode;
-    TreeNode* rightNode;
-
-  public:
-    BinaryOperator( const Token _op, TreeNode* _lNode, TreeNode* _rNode ) :
-      op( _op ), leftNode( _lNode ), rightNode( _rNode ) {}
-
-    ~BinaryOperator() {
-      if ( leftNode ) delete leftNode;
-      if ( rightNode ) delete rightNode;
-    }
-
-    std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;
-};
-
-class BindingNode : public TreeNode {
+class BindingNode : public Node {
   protected:
     Token variable;
-    TreeNode* bindingNode;
-    TreeNode* bodyNode;
+    Node* binding;
+    Node* body;
 
   public:
-    BindingNode( const Token _variable, TreeNode* _bindingNode, TreeNode* _bodyNode ) :
-      variable( _variable ), bindingNode( _bindingNode ), bodyNode( _bodyNode ) {}
-
+    BindingNode( const Token _variable, Node* _binding, Node* _body ) :
+      variable( _variable ), binding( _binding ), body( _body ) {}
+    
     ~BindingNode() {
-      if ( bindingNode ) delete bindingNode;
-      if ( bodyNode ) delete bodyNode;
+      if ( binding ) delete binding;
+      if ( body ) delete body;
     }
 
     std::string compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const;

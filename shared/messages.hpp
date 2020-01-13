@@ -1,13 +1,13 @@
 #ifndef _MESSAGES_HPP
 #define _MESSAGES_HPP
 
-#include <utility>
 #include <string>
 
 #include "token/Token.hpp"
 
 typedef std::pair<Token, std::string> TokenError;
 
+/* rework format of error and warning messages */
 const std::string ERR_UNEXPECTED_TOKEN = "unexpected token";
 
 const std::string ERR_MISSING_LEFT_OPERAND = "missing left operand";
