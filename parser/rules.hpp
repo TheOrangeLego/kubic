@@ -5,6 +5,8 @@
 #include <set>
 #include <map>
 
+#include "../shared/token/Token.hpp"
+
 const std::string WHITESPACE_CHARS = " \t";
 
 const std::string NEWLINE_CHARS = "\n\r";

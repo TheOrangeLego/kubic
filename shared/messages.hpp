@@ -5,7 +5,7 @@
 
 #include "token/Token.hpp"
 
-typedef std::pair<Token, std::string> TokenError;
+typedef std::pair<Token, std::string> ParserError;
 
 /* rework format of error and warning messages */
 const std::string ERR_UNEXPECTED_TOKEN = "unexpected token";

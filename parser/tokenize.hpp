@@ -43,38 +43,38 @@ static bool isGrouper( const char _char ) {
   return contains( GROUP_CHARS, _char );
 }
 
-static bool parsingConstant( const char _char ) {
+static bool tokenizeConstant( const char _char ) {
   return isNumeric( _char ) || _char == 'x' || _char == 'o' ||
     ( _char >= 'a' && _char <= 'f' ) || ( _char >= 'A' && _char <= 'F' );
 }
 
-static bool parsingVariable( const char _char ) {
+static bool tokenizeVariable( const char _char ) {
   return isAlpha( _char ) || isNumeric( _char ) || isUnderScore( _char );
 }
 
-static bool parsingKeyword( const char _char ) {
+static bool tokenizeKeyword( const char _char ) {
   return isAlpha( _char );
 }
 
-static bool parsingOperator( const char _char ) {
+static bool tokenizeOperator( const char _char ) {
   return isOperator( _char );
 }
 
-static bool parsingGrouper( const char _char ) {
+static bool tokenizeGrouper( const char _char ) {
   return isGrouper( _char );
 }
 
-static bool parsingUndefined( const char _char ) {
+static bool tokenizeUndefined( const char _char ) {
   return !isNewline( _char ) && !isWhitespace( _char ) && !isOperator( _char );
 }
 
-static std::map<TokenType, bool (*)(char)> parsingConditions = {
-  {TokenType::Constant,  parsingConstant},
-  {TokenType::Variable,  parsingVariable},
-  {TokenType::Keyword,   parsingKeyword},
-  {TokenType::Operator,  parsingOperator},
-  {TokenType::Grouper,   parsingGrouper},
-  {TokenType::Undefined, parsingUndefined}
+static std::map<TokenType, bool (*)(char)> tokenizeConditions = {
+  {TokenType::Constant,  tokenizeConstant},
+  {TokenType::Variable,  tokenizeVariable},
+  {TokenType::Keyword,   tokenizeKeyword},
+  {TokenType::Operator,  tokenizeOperator},
+  {TokenType::Grouper,   tokenizeGrouper},
+  {TokenType::Undefined, tokenizeUndefined}
 };
 
 /*
@@ -88,7 +88,7 @@ static std::map<TokenType, bool (*)(char)> parsingConditions = {
  * 4 - Constant - digits, letters a-f/A-F for hexadecimal, and 'o', 'd', and 'x' to explicitly denote
  *                whether the digit is octal, decimal, or hexal, respectively
  */
-static Token parseItem( const std::string _input, const unsigned int _line, unsigned int& _col,
+static Token tokenizeItem( const std::string _input, const unsigned int _line, unsigned int& _col,
   unsigned int& _position, unsigned int& _tokenLength, const unsigned int _inputLength,
   const TokenType _type ) {
   char currentChar = _input[_position];
@@ -101,25 +101,25 @@ static Token parseItem( const std::string _input, const unsigned int _line, unsi
     return Token( tokenString, _type, _line, _col, DEFAULT_FILENAME );
   }
 
-  while ( _position < _inputLength && parsingConditions[_type]( currentChar ) ) {
+  while ( _position < _inputLength && tokenizeConditions[_type]( currentChar ) ) {
     _tokenLength++;
     _col++;
     currentChar = _input[++_position];
   }
 
   if ( _type ==  TokenType::Keyword && ( isNumeric( currentChar ) || isUnderScore( currentChar ) ) ) {
-    return parseItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Variable );
+    return tokenizeItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Variable );
   }
   
   if ( _type != TokenType::Operator && _position < _inputLength &&
        !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
-    return parseItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Undefined );
+    return tokenizeItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Undefined );
   }
 
   std::string tokenString = _input.substr( _position - _tokenLength, _tokenLength );
 
   if ( _type == TokenType::Keyword && KEYWORDS.find( tokenString ) == KEYWORDS.end() ) {
-    return parseItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Variable );
+    return tokenizeItem( _input, _line, _col, _position, _tokenLength, _inputLength, TokenType::Variable );
   }
 
   Token token( tokenString, _type, _line, _col, DEFAULT_FILENAME );
@@ -127,7 +127,7 @@ static Token parseItem( const std::string _input, const unsigned int _line, unsi
   return token;
 }
 
-std::queue<Token> parse( const std::string _input ) {
+std::queue<Token> tokenize( const std::string _input ) {
   unsigned int line = 0;
   unsigned int col = 0;
   unsigned int position = 0;
@@ -147,14 +147,14 @@ std::queue<Token> parse( const std::string _input ) {
       col = 0;
     } else {
       Token token = isGrouper( currentChar ) 
-        ? parseItem( _input, line, col, position, tokenLength, inputLength, TokenType::Grouper )
+        ? tokenizeItem( _input, line, col, position, tokenLength, inputLength, TokenType::Grouper )
         : isOperator( currentChar )
-          ? parseItem( _input, line, col, position, tokenLength, inputLength, TokenType::Operator )
+          ? tokenizeItem( _input, line, col, position, tokenLength, inputLength, TokenType::Operator )
           : isNumeric( currentChar )
-            ? parseItem( _input, line, col, position, tokenLength, inputLength, TokenType::Constant )
+            ? tokenizeItem( _input, line, col, position, tokenLength, inputLength, TokenType::Constant )
             : isUnderScore( currentChar )
-              ? parseItem( _input, line, col, position, tokenLength, inputLength, TokenType::Variable )
-              : parseItem( _input, line, col, position, tokenLength, inputLength, TokenType::Keyword );
+              ? tokenizeItem( _input, line, col, position, tokenLength, inputLength, TokenType::Variable )
+              : tokenizeItem( _input, line, col, position, tokenLength, inputLength, TokenType::Keyword );
       tokens.push( token );
     }
   }

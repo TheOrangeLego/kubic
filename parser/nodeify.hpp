@@ -10,42 +10,52 @@
 #include "../shared/token/Token.hpp"
 #include "../shared/node/Node.hpp"
 
-Node* nodeify( std::queue<Token>& _tokens, std::stack<TokenError>& _errors );
+static std::stack<ParserError> parserErrors;
 
-Node* nodeifyConstant( std::stack<Token>& _tokens, std::stack<TokenError>& _errors ) {
+bool hasParserErrors() {
+  return !parserErrors.empty();
+}
+
+void printParserErrors() {
+}
+
+Node* nodeify( std::queue<Token>& );
+Node* nodeifyArithmetic( std::stack<Token>& );
+
+Node* nodeifyConstant( std::stack<Token>& _tokens ) {
   Token token = _tokens.top();
   _tokens.pop();
 
   return new ConstantNode( token );
 }
 
-Node* nodeifyVariable( std::stack<Token>& _tokens, std::stack<TokenError>& _errors ) {
+Node* nodeifyVariable( std::stack<Token>& _tokens ) {
   Token token = _tokens.top();
   _tokens.pop();
 
   return new VariableNode( token );
 }
 
-Node* nodeifyUnaryOperator( std::stack<Token>& _tokens, std::stack<TokenError>& _errors ) {
+Node* nodeifyUnaryOperator( std::stack<Token>& _tokens ) {
   Token token = _tokens.top();
   _tokens.pop();
 
-  Node* node = nodeifyArithmetic( _tokens, _errors );
+  Node* node = nodeifyArithmetic( _tokens );
 
   return new UnaryOperatorNode( token, node );
 }
 
-Node* nodeifyBinaryOperator( std::stack<Token>& _tokens, std::stack<TokenError>& _errors ) {
+Node* nodeifyBinaryOperator( std::stack<Token>& _tokens ) {
   Token token = _tokens.top();
   _tokens.pop();
 
-  Node* rNode = nodeifyArithmetic( _tokens, _errors );
-  Node* lNode = nodeifyArithmetic( _tokens, _errors );
+  Node* rNode = nodeifyArithmetic( _tokens );
+  Node* lNode = nodeifyArithmetic( _tokens );
 
   return new BinaryOperatorNode( token, lNode, rNode );
 }
 
-Node* nodeifyArithmetic( std::stack<Token>& _tokens, std::stack<TokenError>& _errors ) {
+Node* nodeifyArithmetic( std::stack<Token>& _tokens ) {
   if ( _tokens.empty() ) {
     return nullptr;
   }
@@ -54,14 +64,14 @@ Node* nodeifyArithmetic( std::stack<Token>& _tokens, std::stack<TokenError>& _er
 
   switch ( token.getType() ) {
     case TokenType::Constant:
-      return nodeifyConstant( _tokens, _errors );
+      return nodeifyConstant( _tokens );
       break;
     case TokenType::Variable:
-      return nodeifyVariable( _tokens, _errors );
+      return nodeifyVariable( _tokens );
       break;
     case TokenType::Operator:
       /* determine if unary or binary operator */
-      return nodeifyBinaryOperator( _tokens, _errors );
+      return nodeifyBinaryOperator( _tokens );
       break;
     default:
       return nullptr;
@@ -69,7 +79,7 @@ Node* nodeifyArithmetic( std::stack<Token>& _tokens, std::stack<TokenError>& _er
   }
 }
 
-Node* nodeifyArithmetic( std::queue<Token>& _tokens, std::stack<TokenError>& _errors ) {
+Node* nodeifyArithmetic( std::queue<Token>& _tokens ) {
   std::stack<Token> operatorTokens;
   std::stack<Token> organizedTokens;
   Token currentToken = _tokens.front();
@@ -121,58 +131,37 @@ Node* nodeifyArithmetic( std::queue<Token>& _tokens, std::stack<TokenError>& _er
     operatorTokens.pop();
   }
 
-  return nodeifyArithmetic( organizedTokens, _errors );
+  return nodeifyArithmetic( organizedTokens );
 }
 
-Node* nodeifyBinding( std::queue<Token>& _tokens, std::stack<TokenError>& _errors ) {
-  // Token letToken = _tokens.front();
-  // _tokens.pop();
-
-  // if ( _tokens.empty() ) {
-  //   _errors.push( TokenError( letToken, ERR_MISSING_VARIABLE_BINDING ) );
-  //   return nullptr;
-  // }
-
-  // Token variableToken = _tokens.front();
-  // _tokens.pop();
-
-  // if ( _tokens.empty() ) {
-  //   _errors.push( TokenError( variableToken, ERR_MISSING_ASSIGNMENT_BINDING ) );
-  //   return nullptr;
-  // }
+Node* nodeifyBinding( std::queue<Token>& _tokens ) {
+  Token letToken = _tokens.front();
+  _tokens.pop();
   
-  // Token assignmentToken = _tokens.front();
+  /*
+   * TODO -- allow the binding of multiple variables within the same let declaration,
+   *         such that the following statement is considered valid
+   *            let x = 3, y = 5, z = x + y :: ...
+   *         This should invoke a new nodeify function that wraps multiple bindings
+   *         and have its compile method simply delegate to its bindings' compile method
+   */
+  Token variableToken = _tokens.front();
+  _tokens.pop();
 
-  // if ( !equals( assignmentToken.getToken(), "=" ) ) {
-  //   _errors.push( TokenError( assignmentToken, ERR_EXPECTED_ASSIGNMENT_BINDING ) );
-  //   return nullptr;
-  // }
-  // _tokens.pop();
+  Token assignerToken = _tokens.front();
+  _tokens.pop();
 
-  // Token currentToken = _tokens.front();
-  // std::queue<Token> bindingTokens;
+  Node* bindingExpression = nodeify( _tokens );
 
-  // while ( !_tokens.empty() && !equals( currentToken.getToken(), "::" ) ) {
-  //   bindingTokens.push( currentToken );
-  //   _tokens.pop();
-  //   currentToken = _tokens.front();
-  // }
-  
-  // if ( _tokens.empty() ) {
-  //   _errors.push( TokenError( currentToken, ERR_MISSING_ENDING_BINDING ) );
-  //   return nullptr;
-  // }
+  Token terminatorToken = _tokens.front();
+  _tokens.pop();
 
-  // if ( !equals( currentToken.getToken(), "::" ) ) {
-  //   _errors.push( TokenError( currentToken, ERR_EXPECTED_ENDING_BINDING ) );
-  //   return nullptr;
-  // }
-  // _tokens.pop();
+  Node* bodyExpression = nodeify( _tokens );
 
-  // return new BindingNode( variableToken, treeify( bindingTokens, _errors ), treeify( _tokens, _errors ) );
+  return new BindingNode( variableToken, bindingExpression, bodyExpression );
 }
 
-Node* nodeify( std::queue<Token>& _tokens, std::stack<TokenError>& _errors ) {
+Node* nodeify( std::queue<Token>& _tokens ) {
   if ( _tokens.empty() ) {
     return nullptr;
   }
@@ -182,7 +171,7 @@ Node* nodeify( std::queue<Token>& _tokens, std::stack<TokenError>& _errors ) {
   switch ( currentToken.getType() ) {
     case TokenType::Constant:
     case TokenType::Variable:
-      return nodeifyArithmetic( _tokens, _errors );
+      return nodeifyArithmetic( _tokens );
       break;
     case TokenType::Grouper:
       break;

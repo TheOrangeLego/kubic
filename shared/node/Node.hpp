@@ -7,9 +7,10 @@
 
 #include "../token/Token.hpp"
 
-typedef std::vector<std::pair<std::string, unsigned int>> EnvironmentMap;
+typedef std::pair<Token, unsigned int> EnvironmentPair;
+typedef std::vector<EnvironmentPair> EnvironmentMap;
 
-class Node{
+class Node {
   protected:
     std::stringstream* representation;
 

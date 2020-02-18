@@ -10,12 +10,20 @@ std::string ConstantNode::compile( const unsigned int _stackOffset, EnvironmentM
 }
 
 std::string VariableNode::compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const {
-  unsigned int offset = 0;
+  for ( unsigned int index = _bindings.size() - 1; index >= 0; index-- ) {
+    if ( equals( _bindings[index].first, variable ) ) {
+      return ( boost::format( "  mov rax, %1%\n" ) % regOffset( RSI, _bindings[index].second ) ).str();
+    }
+  }
 
-  return ( boost::format( "  mov rax, %1%\n" ) % regOffset( RSI, offset ) ).str();
+  /* TODO -- variable not found message */ 
 }
 
 std::string UnaryOperatorNode::compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const {
+  *representation << operand->compile( _stackOffset, _bindings );
+
+  /* TODO -- map each possible unary operator to an appropriate assembly instruction */
+
   return representation->str();
 }
 
@@ -38,5 +46,10 @@ std::string BinaryOperatorNode::compile( const unsigned int _stackOffset, Enviro
 }
 
 std::string BindingNode::compile( const unsigned int _stackOffset, EnvironmentMap& _bindings ) const {
+  EnvironmentMap appendedEnvironment( _bindings );
+
+  *representation << binding->compile( _stackOffset, _bindings );
+  appendedEnvironment.push_back( EnvironmentPair( variable, _stackOffset ) );
+  *representation << body->compile( _stackOffset + 1, appendedEnvironment );
   return representation->str();
 }
