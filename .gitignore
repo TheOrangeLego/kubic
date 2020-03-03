@@ -1,18 +1,3 @@
 # VS Code settings
 .vscode
 
-# CPP files
-*.o
-*.hpp.gch
-
-# assembly files
-*.asm
-
-# kubic files
-*.kbc
-
-# kubic compiler binary
-kubic-c
-
-# kubic executable binary
-main

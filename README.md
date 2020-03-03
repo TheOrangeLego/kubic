@@ -5,7 +5,7 @@ software programming, and a non-verbose language of choice for those familiar wi
 Python.
 
 To be honest, there are no standout features in Kubic that you could not find in other languages, nor is it blazing
-fast. Instead, I see this project as a tool that welcomes everyone to use in order to solve some type of problem.
+fast. Instead, I see this project as a toy language that welcomes all to use for any purpose they desire.
 
 ### Sample Code
 
@@ -48,4 +48,26 @@ generate a Kubic executable binary:
 2.  `kubic foo.kbc` - compiles `foo.kbc`, generating a `kubic.asm` assembly file
 
 3.  `make driver` - creates a binary executable from the assembly file mentioned above
+
+##### File Structure
+
+```
+kubic/
+├── compiler/
+│   ├── assembly.hpp
+│   ├── compiler.hpp
+│   └── messages.hpp
+├── parser/
+│   ├── messages.hpp
+│   ├── lexer.hpp
+│   ├── parser.hpp
+│   └── rules.hpp
+├── shared/
+│   ├── helpers.hpp
+│   ├── nodes.hpp
+│   └── tokenss.hpp
+├── kubic.cpp
+├── Makefile
+└── README.md
+```
 
