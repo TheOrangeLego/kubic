@@ -5,9 +5,9 @@
 #include <queue>
 #include <string>
 
-#include "../shared/helpers.hpp"
-#include "rules.hpp"
-#include "../shared/token.hpp"
+#include "parser/rules.hpp"
+#include "shared/helpers.hpp"
+#include "shared/token.hpp"
 
 static bool isAlphaLower( const char _char ) {
   return _char >= 'a' && _char <= 'z';
@@ -71,12 +71,12 @@ static bool tokenizeUndefined( const char _char ) {
 }
 
 static std::map<TokenType, bool (*)(char)> tokenizeConditions = {
-  {TokenType::ConstantToken,  tokenizeConstant},
-  {TokenType::VariableToken,  tokenizeVariable},
-  {TokenType::KeywordToken,   tokenizeKeyword},
-  {TokenType::OperatorToken,  tokenizeOperator},
-  {TokenType::GroupToken,     tokenizeGroup},
-  {TokenType::UndefinedToken, tokenizeUndefined}
+  {TokenType::ConstantTokenType,  tokenizeConstant},
+  {TokenType::VariableTokenType,  tokenizeVariable},
+  {TokenType::KeywordTokenType,   tokenizeKeyword},
+  {TokenType::OperatorTokenType,  tokenizeOperator},
+  {TokenType::GroupTokenType,     tokenizeGroup},
+  {TokenType::UndefinedTokenType, tokenizeUndefined}
 };
 
 /*
@@ -102,7 +102,7 @@ static Token tokenizeItem(
 ) {
   char currentChar = _input[_position];
 
-  if ( _type == TokenType::GroupToken ) {
+  if ( _type == TokenType::GroupTokenType ) {
     std::string tokenString( 1, currentChar );
     _col++;
     _position++;
@@ -116,24 +116,24 @@ static Token tokenizeItem(
     currentChar = _input[++_position];
   }
 
-  if ( _type ==  TokenType::KeywordToken && ( isConstant( currentChar ) || isUnderscore( currentChar ) ) ) {
+  if ( _type ==  TokenType::KeywordTokenType && ( isConstant( currentChar ) || isUnderscore( currentChar ) ) ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableToken
+      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableTokenType
     );
   }
   
-  if ( _type != TokenType::OperatorToken && _position < _inputLength &&
+  if ( _type != TokenType::OperatorTokenType && _position < _inputLength &&
        !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::UndefinedToken
+      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::UndefinedTokenType
     );
   }
 
   std::string tokenString = _input.substr( _position - _tokenLength, _tokenLength );
 
-  if ( _type == TokenType::KeywordToken && KEYWORDS.find( tokenString ) == KEYWORDS.end() ) {
+  if ( _type == TokenType::KeywordTokenType && KEYWORDS.find( tokenString ) == KEYWORDS.end() ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableToken
+      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableTokenType
     );
   }
 
@@ -163,22 +163,22 @@ std::queue<Token> tokenize( const std::string _input, const std::string _filenam
     } else {
       Token token = isGroup( currentChar ) 
         ? tokenizeItem(
-            _input, line, col, position, _filename, tokenLength, inputLength, TokenType::GroupToken
+            _input, line, col, position, _filename, tokenLength, inputLength, TokenType::GroupTokenType
           )
         : isOperator( currentChar )
           ? tokenizeItem(
-              _input, line, col, position, _filename, tokenLength, inputLength, TokenType::OperatorToken
+              _input, line, col, position, _filename, tokenLength, inputLength, TokenType::OperatorTokenType
             )
           : isConstant( currentChar )
             ? tokenizeItem(
-                _input, line, col, position, _filename, tokenLength, inputLength, TokenType::ConstantToken
+                _input, line, col, position, _filename, tokenLength, inputLength, TokenType::ConstantTokenType
               )
             : isUnderscore( currentChar )
               ? tokenizeItem(
-                  _input, line, col, position, _filename, tokenLength, inputLength, TokenType::VariableToken
+                  _input, line, col, position, _filename, tokenLength, inputLength, TokenType::VariableTokenType
                 )
               : tokenizeItem(
-                  _input, line, col, position, _filename, tokenLength, inputLength, TokenType::KeywordToken
+                  _input, line, col, position, _filename, tokenLength, inputLength, TokenType::KeywordTokenType
                 );
       tokens.push( token );
     }

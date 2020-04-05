@@ -9,7 +9,9 @@ void error( unsigned int _errorCode ) {
 int main( void ) {
   int kubicResult = kubic_main();
 
-  if ( kubicResult ) error( kubicResult );
+  // if ( kubicResult ) error( kubicResult );
+
+  std::cout << "Kubic returned :: " << kubicResult << std::endl;
 
   return 0;
 }

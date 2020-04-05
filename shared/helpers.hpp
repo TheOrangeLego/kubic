@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 
-#include "./token.hpp"
+#include "shared/token.hpp"
 
 inline bool contains( const std::string _string, const char _char ) {
   return _string.find( _char ) != std::string::npos;
@@ -23,6 +23,10 @@ inline bool equals( const std::string _stringA, const std::string _stringB ) {
 
 inline bool equals( const Token _tokenA, const Token _tokenB ) {
   return equals( _tokenA.getText(), _tokenB.getText() );
+}
+
+inline bool equals( const Token _token, const std::string _string ) {
+  return equals( _token.getText(), _string );
 }
 
 inline void formatSingle( std::stringstream* _stream, std::string _string, std::string _variable ) {

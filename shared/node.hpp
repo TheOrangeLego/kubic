@@ -5,7 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "./types.hpp"
+#include "compiler/assembly.hpp"
+#include "shared/helpers.hpp"
+#include "shared/token.hpp"
+#include "shared/types.hpp"
 
 typedef std::pair<Token, unsigned int> EnvironmentBinding;
 
@@ -38,12 +41,15 @@ class ConstantNode : public Node {
 
   public:
     ConstantNode( const Token _token ) : constant( _token ) {
-      nodeType = NodeType::ConstantNode;
+      nodeType = NodeType::ConstantNodeType;
     }
 
     ~ConstantNode() {}
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const;
+    #pragma GCC diagnostic ignored "-Wunused-parameter"
+    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings) const {
+      return printSingle( "  mov qword rax, %1%\n", constant.getText() );
+    }
 };
 
 class VariableNode : public Node {
@@ -52,12 +58,20 @@ class VariableNode : public Node {
 
   public:
     VariableNode( const Token _token ) : variable( _token ) {
-      nodeType = NodeType::VariableNode;
+      nodeType = NodeType::VariableNodeType;
     }
 
     ~VariableNode() {}
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const;
+    #pragma GCC diagnostic ignored "-Wunused-parameter"
+    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
+      unsigned int bindingsSize = _bindings.size();
+      for ( unsigned int index = 0; index < bindingsSize; index++ ) {
+        if ( equals( _bindings[bindingsSize - index - 1].first, variable ) ) {
+          return printSingle( "  mov rax, %1%\n", regOffset( RSI, _bindings[index].second ) );
+        }
+      }
+    }
 };
 
 class UnaryOperatorNode : public Node {
@@ -68,14 +82,18 @@ class UnaryOperatorNode : public Node {
   public:
     UnaryOperatorNode( const Token _uOperator, Node* _operand ) :
       uOperator( _uOperator ), operand( _operand ) {
-      nodeType = NodeType::UnaryOperatorNode;
+      nodeType = NodeType::UnaryOperatorNodeType;
     }
 
     ~UnaryOperatorNode() {
       if ( operand ) delete operand;
     }
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
+      *representation << operand->compile( _stackOffset, _bindings );
+
+      return representation->str();
+    }
 };
 
 class BinaryOperatorNode : public Node {
@@ -87,7 +105,7 @@ class BinaryOperatorNode : public Node {
   public:
     BinaryOperatorNode( const Token _bOperator, Node* _lOperand, Node* _rOperand ) :
       bOperator( _bOperator ), lOperand( _lOperand ), rOperand( _rOperand ) {
-      nodeType = NodeType::BinaryOperatorNode;
+      nodeType = NodeType::BinaryOperatorNodeType;
     }
 
     ~BinaryOperatorNode() {
@@ -95,7 +113,23 @@ class BinaryOperatorNode : public Node {
       if ( rOperand ) delete rOperand;
     }
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
+      *representation << rOperand->compile( _stackOffset, _bindings );
+      formatSingle( representation, "  mov %1%, rax\n", regOffset( RSI, _stackOffset ) );
+      *representation << lOperand->compile( _stackOffset + 1, _bindings );
+
+      if ( equals( bOperator.getText(), "+" ) ) {
+        formatSingle( representation, "  add rax, %1%\n", regOffset( RSI, _stackOffset ) );
+      } else if ( equals( bOperator.getText(), "-" ) ) {
+        formatSingle( representation, "  sub rax, %1%\n", regOffset( RSI, _stackOffset ) );
+      } else if ( equals( bOperator.getText(), "*" ) ) {
+        formatSingle( representation, "  imul rax, %1%\n", regOffset( RSI, _stackOffset ) );
+      } else if ( equals( bOperator.getText(), "/" ) ) {
+        formatSingle( representation, "  idiv rax, %1%\n", regOffset( RSI, _stackOffset ) );
+      }
+
+      return representation->str();
+    }
 };
 
 class BindingNode : public Node {
@@ -107,14 +141,18 @@ class BindingNode : public Node {
   public:
     BindingNode( const Token _variable, DataType _dataType, Node* _bindingExpression ) :
       variable( _variable ), dataType( _dataType ), bindingExpression( _bindingExpression ) {
-      nodeType = NodeType::BindingNode;
+      nodeType = NodeType::BindingNodeType;
     }
 
     ~BindingNode() {
       if ( bindingExpression ) delete bindingExpression;
     }
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const;
+    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
+      /* TODO -- implement binding with types */
+
+      return representation->str();
+    }
 };
 
 #endif

@@ -1,3 +1,10 @@
 # VS Code settings
 .vscode
 
+# g++ generated files
+kubicc
+*.o
+
+# kubic generated files
+*.ka
+*.kbc

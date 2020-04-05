@@ -4,17 +4,20 @@
 #include <stack>
 #include <queue>
 
-#include "../shared/helpers.hpp"
-#include "../shared/node.hpp"
-#include "rules.hpp"
-#include "../shared/token.hpp"
-#include "../shared/types.hpp"
+#include "parser/rules.hpp"
+#include "shared/helpers.hpp"
+#include "shared/node.hpp"
+#include "shared/token.hpp"
+#include "shared/types.hpp"
 
 /* forward declaration */
 Node* parse( std::queue<Token>& _tokens );
 
 /* forward declaration */
 Node* parseArithmetic( std::stack<Token>& _tokens );
+
+/* forward declaration */
+Node* parseBinding( std::queue<Token>& _tokens, const Token _variable );
 
 Node* parseConstant( std::stack<Token>& _tokens ) {
   Token constant = _tokens.top();
@@ -26,12 +29,6 @@ Node* parseConstant( std::stack<Token>& _tokens ) {
 Node* parseVariable( std::stack<Token>& _tokens ) {
   Token variable = _tokens.top();
   _tokens.pop();
-
-  Token nextToken = _tokens.top();
-
-  if ( equals( nextToken.getText(), "::" ) ) {
-    return parseBinding( _tokens, variable );
-  }
 
   return new VariableNode( variable );
 }
@@ -63,13 +60,13 @@ Node* parseArithmetic( std::stack<Token>& _tokens ) {
   Token token = _tokens.top();
 
   switch ( token.getType() ) {
-    case TokenType::ConstantToken:
+    case TokenType::ConstantTokenType:
       return parseConstant( _tokens );
       break;
-    case TokenType::VariableToken:
+    case TokenType::VariableTokenType:
       return parseVariable( _tokens );
       break;
-    case TokenType::OperatorToken:
+    case TokenType::OperatorTokenType:
       if ( contains( UNARY_OPERATORS, token.getText() ) ) {
         return parseUnaryOperator( _tokens );
       }
@@ -85,44 +82,42 @@ Node* parseArithmetic( std::stack<Token>& _tokens ) {
 Node* parseArithmetic( std::queue<Token>& _tokens ) {
   std::stack<Token> operatorTokens;
   std::stack<Token> organizedTokens;
-  Token headToken = _tokens.front();
-  Token headOperator( "" );
+  Token headToken;
+  Token topOperatorToken;
 
-  _tokens.pop();
+  while ( !_tokens.empty() ) {
+    headToken = _tokens.front();
+    _tokens.pop();
 
-  if ( equals( _tokens.front, "::" ) ) {
-    return parseBinding( _tokens, headToken );
-  }
-
-  while ( !_tokens.empty() && (
-    headToken.getType() == TokenType::ConstantToken ||
-    headToken.getType() == TokenType::VariableToken ||
-    headToken.getType() == TokenType::OperatorToken ||
-    headToken.getType() == TokenType::GroupToken
-  )) {
     switch ( headToken.getType() ) {
-      case TokenType::ConstantToken:
-      case TokenType::VariableToken:
+      case TokenType::ConstantTokenType:
+      case TokenType::VariableTokenType:
         organizedTokens.push( headToken );
         break;
-      case TokenType::GroupToken:
-        if ( equals( headToken.getText(), "(" ) ) {
+      case TokenType::GroupTokenType:
+        if ( equals( headToken, "(" ) ) {
           operatorTokens.push( headToken );
-        } else if ( equals( headToken.getText(), ")" ) ) {
-          headOperator = operatorTokens.top();
-          operatorTokens.pop();
+        } else {
+          topOperatorToken = operatorTokens.top();
 
-          while ( !equals( headOperator.getText(), "(" ) ) {
-            organizedTokens.push( headOperator );
-            headOperator = operatorTokens.top();
+          while ( !equals( topOperatorToken, "(" ) ) {
+            organizedTokens.push( topOperatorToken );
             operatorTokens.pop();
+            topOperatorToken = operatorTokens.top();
           }
+
+          operatorTokens.pop();
         }
         break;
-      case TokenType::OperatorToken:
-        while ( !operatorTokens.empty() && !hasHigherPriority( headToken, operatorTokens.top() ) ) {
-          organizedTokens.push( operatorTokens.top() );
+      case TokenType::OperatorTokenType:
+        if ( !operatorTokens.empty() ) {
+          topOperatorToken = operatorTokens.top();
+        }
+
+        while ( !operatorTokens.empty() && !hasHigherPriority( headToken, topOperatorToken ) ) {
+          organizedTokens.push( topOperatorToken );
           operatorTokens.pop();
+          topOperatorToken = operatorTokens.top();
         }
 
         operatorTokens.push( headToken );
@@ -141,17 +136,17 @@ Node* parseArithmetic( std::queue<Token>& _tokens ) {
 }
 
 Node* parseBinding( std::queue<Token>& _tokens, const Token _variable ) {
-  Token typeBinding = _tokens.top();
+  Token typeBinding = _tokens.front();
   _tokens.pop();
 
-  Token dataType = _tokens.top();
+  Token dataType = _tokens.front();
   _tokens.pop();
 
-  Token bodyBinding = _tokens.top();
+  Token bodyBinding = _tokens.front();
   _tokens.pop();
 
   Node* bindingExpression = parse( _tokens );
-  return BindingNode( _variable, DATA_TYPE_MAPS[dataType.getText()], bindingExpression );
+  return new BindingNode( _variable, DATA_TYPE_MAPS[dataType.getText()], bindingExpression );
 }
 
 Node* parse( std::queue<Token>& _tokens ) {
@@ -162,13 +157,16 @@ Node* parse( std::queue<Token>& _tokens ) {
   Token headToken = _tokens.front();
 
   switch ( headToken.getType() ) {
-    case TokenType::ConstantToken:
-    case TokenType::VariableToken:
+    case TokenType::ConstantTokenType:
+    case TokenType::VariableTokenType:
+    case TokenType::GroupTokenType:
       return parseArithmetic( _tokens );
       break;
     default:
       break;
   }
+
+  return nullptr;
 }
 
 #endif

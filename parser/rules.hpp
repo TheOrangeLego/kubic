@@ -5,7 +5,7 @@
 #include <set>
 #include <string>
 
-#include "../shared/token.hpp"
+#include "shared/token.hpp"
 
 const std::string WHITESPACE_CHARS = " \t";
 
@@ -40,14 +40,14 @@ std::map<std::string, unsigned int> OPERATOR_PRIORITIES = {
   {"*", 2}, {"/", 2}
 };
 
-std::map<std::string, unsigned int> DATA_TYPE_MAPS = {
+std::map<std::string, DataType> DATA_TYPE_MAPS = {
   {"Void",    DataType::VoidData},
   {"Integer", DataType::IntegerData},
   {"String",  DataType::StringData},
 };
 
 bool hasHigherPriority( const Token _tokenA, const Token _tokenB ) {
-  return OPERATOR_PRIORITIES[ _tokenA.getText()] > OPERATOR_PRIORITIES[_tokenB.getText()];
+  return OPERATOR_PRIORITIES[ _tokenA.getText()] >= OPERATOR_PRIORITIES[_tokenB.getText()];
 }
 
 #endif

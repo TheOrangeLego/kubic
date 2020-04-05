@@ -2,20 +2,20 @@
 #define _TYPES_HPP
 
 enum TokenType {
-  UndefinedToken,
-  ConstantToken,
-  VariableToken,
-  OperatorToken,
-  GroupToken,
-  KeywordToken
+  UndefinedTokenType,
+  ConstantTokenType,
+  VariableTokenType,
+  OperatorTokenType,
+  GroupTokenType,
+  KeywordTokenType
 };
 
 enum NodeType {
-  ConstantNode,
-  VariableNode,
-  UnaryOperatorNode,
-  BinaryOperatorNode,
-  BindingNode
+  ConstantNodeType,
+  VariableNodeType,
+  UnaryOperatorNodeType,
+  BinaryOperatorNodeType,
+  BindingNodeType
 };
 
 enum DataType {

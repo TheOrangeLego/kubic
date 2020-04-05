@@ -4,7 +4,7 @@
 #include <boost/format.hpp>
 #include <string>
 
-#include "./types.hpp"
+#include "shared/types.hpp"
 
 typedef struct {
   unsigned int line;
@@ -19,6 +19,8 @@ class Token {
     TokenPosition position;
 
   public:
+    Token() {}
+
     Token(
       const std::string _text,
       const TokenType _type,
