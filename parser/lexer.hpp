@@ -5,8 +5,8 @@
 #include <queue>
 #include <string>
 
-#include "parser/rules.hpp"
 #include "shared/helpers.hpp"
+#include "parser/rules.hpp"
 #include "shared/token.hpp"
 
 static bool isAlphaLower( const char _char ) {
@@ -157,29 +157,19 @@ std::queue<Token> tokenize( const std::string _input, const std::string _filenam
       position++;
       col++;
     } else if ( isNewline( currentChar ) ) {
-      line++;
+      tokens.push( Token( std::string( 1, currentChar ), TokenType::NewlineTokenType, line++, col, _filename ) );
       position++;
       col = 0;
     } else {
       Token token = isGroup( currentChar ) 
-        ? tokenizeItem(
-            _input, line, col, position, _filename, tokenLength, inputLength, TokenType::GroupTokenType
-          )
+        ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::GroupTokenType )
         : isOperator( currentChar )
-          ? tokenizeItem(
-              _input, line, col, position, _filename, tokenLength, inputLength, TokenType::OperatorTokenType
-            )
+          ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::OperatorTokenType )
           : isConstant( currentChar )
-            ? tokenizeItem(
-                _input, line, col, position, _filename, tokenLength, inputLength, TokenType::ConstantTokenType
-              )
+            ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::ConstantTokenType )
             : isUnderscore( currentChar )
-              ? tokenizeItem(
-                  _input, line, col, position, _filename, tokenLength, inputLength, TokenType::VariableTokenType
-                )
-              : tokenizeItem(
-                  _input, line, col, position, _filename, tokenLength, inputLength, TokenType::KeywordTokenType
-                );
+              ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::VariableTokenType )
+              : tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::KeywordTokenType );
       tokens.push( token );
     }
   }

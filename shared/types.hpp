@@ -3,6 +3,7 @@
 
 enum TokenType {
   UndefinedTokenType,
+  NewlineTokenType,
   ConstantTokenType,
   VariableTokenType,
   OperatorTokenType,
@@ -19,7 +20,6 @@ enum NodeType {
 };
 
 enum DataType {
-  VoidData,
   IntegerData,
   StringData
 };

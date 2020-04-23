@@ -10,9 +10,27 @@
 #include "shared/token.hpp"
 #include "shared/types.hpp"
 
+static unsigned int stackOffset = 0;
+
 typedef std::pair<Token, unsigned int> EnvironmentBinding;
 
-typedef std::vector<EnvironmentBinding> EnvironmentBindings;
+typedef std::vector<EnvironmentBinding> Environment;
+
+void insertBinding( Environment& _environment, Token _token ) {
+  _environment.push_back( EnvironmentBinding( _token, stackOffset ) );
+  stackOffset++;
+}
+
+unsigned int searchBinding( Environment& _environment, Token _token ) {
+  for ( EnvironmentBinding binding : _environment ) {
+    if ( equals( binding.first, _token ) ) {
+      return binding.second;
+    }
+  }
+
+  /* TODO -- try-catch for not found variables */
+  return 0;
+}
 
 class Node {
   protected:
@@ -32,7 +50,7 @@ class Node {
       return nodeType;
     }
 
-    virtual std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const = 0;
+    virtual std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const = 0;
 };
 
 class ConstantNode : public Node {
@@ -47,7 +65,7 @@ class ConstantNode : public Node {
     ~ConstantNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings) const {
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
       return printSingle( "  mov qword rax, %1%\n", constant.getText() );
     }
 };
@@ -64,13 +82,8 @@ class VariableNode : public Node {
     ~VariableNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
-      unsigned int bindingsSize = _bindings.size();
-      for ( unsigned int index = 0; index < bindingsSize; index++ ) {
-        if ( equals( _bindings[bindingsSize - index - 1].first, variable ) ) {
-          return printSingle( "  mov rax, %1%\n", regOffset( RSI, _bindings[index].second ) );
-        }
-      }
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+      return printSingle( "  mov rax, %1%\n", regOffset( RSI, searchBinding( _environment, variable ) ) );
     }
 };
 
@@ -89,8 +102,8 @@ class UnaryOperatorNode : public Node {
       if ( operand ) delete operand;
     }
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
-      *representation << operand->compile( _stackOffset, _bindings );
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+      *representation << operand->compile( _environment );
 
       return representation->str();
     }
@@ -113,19 +126,19 @@ class BinaryOperatorNode : public Node {
       if ( rOperand ) delete rOperand;
     }
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
-      *representation << rOperand->compile( _stackOffset, _bindings );
-      formatSingle( representation, "  mov %1%, rax\n", regOffset( RSI, _stackOffset ) );
-      *representation << lOperand->compile( _stackOffset + 1, _bindings );
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+      *representation << rOperand->compile( _environment );
+      formatSingle( representation, "  mov %1%, rax\n", regOffset( RSI, _offset ) );
+      *representation << lOperand->compile( _environment, _offset + 1 );
 
       if ( equals( bOperator.getText(), "+" ) ) {
-        formatSingle( representation, "  add rax, %1%\n", regOffset( RSI, _stackOffset ) );
+        formatSingle( representation, "  add rax, %1%\n", regOffset( RSI, _offset ) );
       } else if ( equals( bOperator.getText(), "-" ) ) {
-        formatSingle( representation, "  sub rax, %1%\n", regOffset( RSI, _stackOffset ) );
+        formatSingle( representation, "  sub rax, %1%\n", regOffset( RSI, _offset ) );
       } else if ( equals( bOperator.getText(), "*" ) ) {
-        formatSingle( representation, "  imul rax, %1%\n", regOffset( RSI, _stackOffset ) );
+        formatSingle( representation, "  imul rax, %1%\n", regOffset( RSI, _offset ) );
       } else if ( equals( bOperator.getText(), "/" ) ) {
-        formatSingle( representation, "  idiv rax, %1%\n", regOffset( RSI, _stackOffset ) );
+        formatSingle( representation, "  idiv rax, %1%\n", regOffset( RSI, _offset ) );
       }
 
       return representation->str();
@@ -148,9 +161,10 @@ class BindingNode : public Node {
       if ( bindingExpression ) delete bindingExpression;
     }
 
-    std::string compile( const unsigned int _stackOffset, EnvironmentBindings& _bindings ) const {
-      /* TODO -- implement binding with types */
-
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+      *representation << bindingExpression->compile( _environment );
+      formatSingle( representation, "  mov %1%, rax\n", regOffset( RSI, _offset ) );
+      insertBinding( _environment, variable );
       return representation->str();
     }
 };

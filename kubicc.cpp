@@ -23,9 +23,16 @@ int main( int argc, char* argv[] ) {
   /* should extract filename from argument */
   std::queue<Token> tokens = tokenize( entryFileContent, argv[1] );
 
-  Node* rootNode = parse( tokens );
+  std::queue<Node*> statements;
+  Node* statement = parse( tokens );
+
+  while ( statement ) {
+    statements.push( statement );
+    statement = parse( tokens );
+  }
+
   /* TODO -- allow dynamic file name once the Kubic driver is not generated through Makefile */
-  bool successfulCompile = compile( rootNode, "main" );
+  bool successfulCompile = compile( statements, "main" );
 
   if ( !successfulCompile ) {
     /* show error messages */

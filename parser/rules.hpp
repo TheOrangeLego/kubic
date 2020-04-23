@@ -16,6 +16,7 @@ const std::string OPERATOR_CHARS = "+-*/";
 const std::string GROUP_CHARS = "()";
 
 const std::set<std::string> KEYWORDS {
+  "let"
 };
 
 const std::set<std::string> UNARY_OPERATORS {
@@ -29,7 +30,6 @@ const std::set<std::string> BINARY_OPERATORS {
 };
 
 const std::set<std::string> DATA_TYPES {
-  "Void",
   "Integer",
   "String"
 };
@@ -41,7 +41,6 @@ std::map<std::string, unsigned int> OPERATOR_PRIORITIES = {
 };
 
 std::map<std::string, DataType> DATA_TYPE_MAPS = {
-  {"Void",    DataType::VoidData},
   {"Integer", DataType::IntegerData},
   {"String",  DataType::StringData},
 };

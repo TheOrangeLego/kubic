@@ -1,12 +1,12 @@
 #ifndef _PARSER_HPP
 #define _PARSER_HPP
 
-#include <stack>
 #include <queue>
+#include <stack>
 
-#include "parser/rules.hpp"
 #include "shared/helpers.hpp"
 #include "shared/node.hpp"
+#include "parser/rules.hpp"
 #include "shared/token.hpp"
 #include "shared/types.hpp"
 
@@ -84,12 +84,16 @@ Node* parseArithmetic( std::queue<Token>& _tokens ) {
   std::stack<Token> organizedTokens;
   Token headToken;
   Token topOperatorToken;
+  bool stopParsing = false;
 
-  while ( !_tokens.empty() ) {
+  while ( !stopParsing && !_tokens.empty() ) {
     headToken = _tokens.front();
     _tokens.pop();
 
     switch ( headToken.getType() ) {
+      case TokenType::NewlineTokenType:
+        stopParsing = true;
+        break;
       case TokenType::ConstantTokenType:
       case TokenType::VariableTokenType:
         organizedTokens.push( headToken );
@@ -135,18 +139,24 @@ Node* parseArithmetic( std::queue<Token>& _tokens ) {
   return parseArithmetic( organizedTokens );
 }
 
-Node* parseBinding( std::queue<Token>& _tokens, const Token _variable ) {
-  Token typeBinding = _tokens.front();
+Node* parseBinding( std::queue<Token>& _tokens ) {
+  Token bindKeyword = _tokens.front();
   _tokens.pop();
 
-  Token dataType = _tokens.front();
+  Token variable = _tokens.front();
   _tokens.pop();
 
-  Token bodyBinding = _tokens.front();
+  Token typeBinder = _tokens.front();
+  _tokens.pop();
+
+  Token typeBinded = _tokens.front();
+  _tokens.pop();
+
+  Token exprBinder = _tokens.front();
   _tokens.pop();
 
   Node* bindingExpression = parse( _tokens );
-  return new BindingNode( _variable, DATA_TYPE_MAPS[dataType.getText()], bindingExpression );
+  return new BindingNode( variable, DATA_TYPE_MAPS[typeBinded.getText()], bindingExpression );
 }
 
 Node* parse( std::queue<Token>& _tokens ) {
@@ -157,11 +167,20 @@ Node* parse( std::queue<Token>& _tokens ) {
   Token headToken = _tokens.front();
 
   switch ( headToken.getType() ) {
+    case TokenType::NewlineTokenType:
+      _tokens.pop();
+      return parse( _tokens );
+      break;
     case TokenType::ConstantTokenType:
     case TokenType::VariableTokenType:
     case TokenType::GroupTokenType:
       return parseArithmetic( _tokens );
       break;
+    case TokenType::KeywordTokenType:
+      if ( equals( headToken, "let" ) ) {
+        return parseBinding( _tokens );
+        break;
+      }
     default:
       break;
   }

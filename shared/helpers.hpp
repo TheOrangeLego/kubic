@@ -3,8 +3,8 @@
 
 #include <boost/format.hpp>
 #include <set>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include "shared/token.hpp"
 
