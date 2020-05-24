@@ -29,6 +29,10 @@ inline bool equals( const Token _token, const std::string _string ) {
   return equals( _token.getText(), _string );
 }
 
+inline bool equals( const Token _token, const TokenType _type ) {
+  return _token.getType() == _type;
+}
+
 inline void formatSingle( std::stringstream* _stream, std::string _string, std::string _variable ) {
   *_stream << boost::format( _string ) % _variable;
 }

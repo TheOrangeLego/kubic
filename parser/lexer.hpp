@@ -131,7 +131,11 @@ static Token tokenizeItem(
 
   std::string tokenString = _input.substr( _position - _tokenLength, _tokenLength );
 
-  if ( _type == TokenType::KeywordTokenType && KEYWORDS.find( tokenString ) == KEYWORDS.end() ) {
+  if (
+    _type == TokenType::KeywordTokenType
+      && !contains( KEYWORDS, tokenString )
+      && !contains( DATA_TYPES, tokenString )
+  ) {
     return tokenizeItem(
       _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableTokenType
     );

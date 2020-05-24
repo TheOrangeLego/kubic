@@ -28,7 +28,6 @@ unsigned int searchBinding( Environment& _environment, Token _token ) {
     }
   }
 
-  /* TODO -- try-catch for not found variables */
   return 0;
 }
 
@@ -50,7 +49,9 @@ class Node {
       return nodeType;
     }
 
-    virtual std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const = 0;
+    virtual std::string compile(
+      Environment& _environment, unsigned int _offset = stackOffset
+    ) const = 0;
 };
 
 class ConstantNode : public Node {

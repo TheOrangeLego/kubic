@@ -12,11 +12,13 @@ std::string compileStatements( std::queue<Node*> _statements ) {
 
   Environment environment;
 
+  unsigned int stackOffset = 0;
+
   while ( !_statements.empty() ) {
     Node* statement = _statements.front();
     _statements.pop();
-
-    compilationResult += statement->compile( environment );
+    
+    compilationResult += statement->compile( environment, stackOffset++ );
 
     delete statement;
   }
@@ -24,8 +26,8 @@ std::string compileStatements( std::queue<Node*> _statements ) {
   return compilationResult;
 }
 
-bool compile( std::queue<Node*> _statements, const std::string _filename ) {
-  Environment environment;
+void compile( std::queue<Node*> _statements, const std::string _filename ) {
+  std::string generatedCode = compileStatements( _statements );
 
   std::string asmFilename = _filename + ".ka";
 
@@ -34,12 +36,9 @@ bool compile( std::queue<Node*> _statements, const std::string _filename ) {
   asmFile << "section .text" << std::endl
           << "  global kubic_main" << std::endl
           << "kubic_main:" << std::endl
-          << compileStatements( _statements )
-          << "  ret" << std::endl
-          << std::endl;
+          << generatedCode
+          << "  ret" << std::endl;
   asmFile.close();
-
-  return true;
 }
 
 #endif

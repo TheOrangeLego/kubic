@@ -4,82 +4,112 @@
 #include <queue>
 #include <stack>
 
+#include "shared/error.hpp"
 #include "shared/helpers.hpp"
 #include "shared/node.hpp"
 #include "parser/rules.hpp"
 #include "shared/token.hpp"
 #include "shared/types.hpp"
 
-/* forward declaration */
-Node* parse( std::queue<Token>& _tokens );
+/* helper functions */
+void emptyTokens( const std::stack<Token>& _tokens, const Token _lastToken, ErrorLogger& _errorLogger ) {
+  if ( _tokens.empty() ) {
+    _errorLogger.logError( ERR_UNEXPECTED_TERMINATION, _lastToken );
+  }
+}
 
-/* forward declaration */
-Node* parseArithmetic( std::stack<Token>& _tokens );
+void emptyTokens( const std::queue<Token>& _tokens, const Token _lastToken, ErrorLogger& _errorLogger ) {
+  if ( _tokens.empty() ) {
+    _errorLogger.logError( ERR_UNEXPECTED_TERMINATION, _lastToken );
+  }
+}
 
-/* forward declaration */
-Node* parseBinding( std::queue<Token>& _tokens, const Token _variable );
+void unexpectedToken( const Token _token, ErrorLogger& _errorLogger ) {
+  _errorLogger.logError( ERR_UNEXPECTED_TOKEN, _token );
+}
 
-Node* parseConstant( std::stack<Token>& _tokens ) {
+void unexpectedToken( const Token _token, const std::string _expectedToken, ErrorLogger& _errorLogger ) {
+  if ( !equals( _token, _expectedToken ) ) {
+    _errorLogger.logError( ERR_UNEXPECTED_TOKEN, _token );
+  }
+}
+
+/* forward declarations */
+Node* parseArithmetic( std::stack<Token>& _tokens, ErrorLogger& _errorLogger, const bool _topLevel = false );
+Node* parseBinding( std::queue<Token>& _tokens, const Token _variable, ErrorLogger& _errorLogger );
+Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger );
+
+Node* parseConstant( std::stack<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token constant = _tokens.top();
   _tokens.pop();
 
   return new ConstantNode( constant );
 }
 
-Node* parseVariable( std::stack<Token>& _tokens ) {
+Node* parseVariable( std::stack<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token variable = _tokens.top();
   _tokens.pop();
 
   return new VariableNode( variable );
 }
 
-Node* parseUnaryOperator( std::stack<Token> & _tokens ) {
+Node* parseUnaryOperator( std::stack<Token> & _tokens, ErrorLogger& _errorLogger ) {
   Token uOperator = _tokens.top();
   _tokens.pop();
 
-  Node* operand = parseArithmetic( _tokens );
+  ( void ) emptyTokens( _tokens, uOperator, _errorLogger );
+  Node* operand = parseArithmetic( _tokens, _errorLogger );
 
   return new UnaryOperatorNode( uOperator, operand );
 }
 
-Node* parseBinaryOperator( std::stack<Token>& _tokens ) {
+Node* parseBinaryOperator( std::stack<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token bOperator = _tokens.top();
   _tokens.pop();
 
-  Node* rOperand = parseArithmetic( _tokens );
-  Node* lOperand = parseArithmetic( _tokens );
+  ( void ) emptyTokens( _tokens, bOperator, _errorLogger );
+  Node* rOperand = parseArithmetic( _tokens, _errorLogger );
+  ( void ) emptyTokens( _tokens, bOperator, _errorLogger );
+  Node* lOperand = parseArithmetic( _tokens, _errorLogger );
 
   return new BinaryOperatorNode( bOperator, lOperand, rOperand );
 }
 
-Node* parseArithmetic( std::stack<Token>& _tokens ) {
+Node* parseArithmetic( std::stack<Token>& _tokens, ErrorLogger& _errorLogger, const bool _topLevel ) {
   if ( _tokens.empty() ) {
     return nullptr;
   }
 
   Token token = _tokens.top();
+  Node* node = nullptr;
 
   switch ( token.getType() ) {
     case TokenType::ConstantTokenType:
-      return parseConstant( _tokens );
+      node = parseConstant( _tokens, _errorLogger );
       break;
     case TokenType::VariableTokenType:
-      return parseVariable( _tokens );
+      node = parseVariable( _tokens, _errorLogger );
       break;
     case TokenType::OperatorTokenType:
       if ( contains( UNARY_OPERATORS, token.getText() ) ) {
-        return parseUnaryOperator( _tokens );
+        node = parseUnaryOperator( _tokens, _errorLogger );
+      } else {
+        node = parseBinaryOperator( _tokens, _errorLogger );
       }
-
-      return parseBinaryOperator( _tokens );
       break;
     default:
-      return nullptr;
+      _errorLogger.logError( ERR_UNEXPECTED_TOKEN, token );
       break;
   }
+
+  if ( _topLevel && !_tokens.empty() ) {
+    _errorLogger.logError( ERR_EXPECTED_TERMINATION, token );
+  }
+
+  return node;
 }
 
-Node* parseArithmetic( std::queue<Token>& _tokens ) {
+Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   std::stack<Token> operatorTokens;
   std::stack<Token> organizedTokens;
   Token headToken;
@@ -136,30 +166,39 @@ Node* parseArithmetic( std::queue<Token>& _tokens ) {
     operatorTokens.pop();
   }
 
-  return parseArithmetic( organizedTokens );
+  return parseArithmetic( organizedTokens, _errorLogger, true );
 }
 
-Node* parseBinding( std::queue<Token>& _tokens ) {
+Node* parseBinding( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token bindKeyword = _tokens.front();
   _tokens.pop();
+  ( void ) unexpectedToken( bindKeyword, "let", _errorLogger );
 
+  ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
   Token variable = _tokens.front();
   _tokens.pop();
 
+  ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
   Token typeBinder = _tokens.front();
   _tokens.pop();
+  ( void ) unexpectedToken( typeBinder, "::", _errorLogger );
 
+  ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
   Token typeBinded = _tokens.front();
   _tokens.pop();
 
+  ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
   Token exprBinder = _tokens.front();
   _tokens.pop();
+  ( void ) unexpectedToken( exprBinder, "=", _errorLogger );
 
-  Node* bindingExpression = parse( _tokens );
+  ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
+  Node* bindingExpression = parseStatement( _tokens, _errorLogger );
+
   return new BindingNode( variable, DATA_TYPE_MAPS[typeBinded.getText()], bindingExpression );
 }
 
-Node* parse( std::queue<Token>& _tokens ) {
+Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   if ( _tokens.empty() ) {
     return nullptr;
   }
@@ -169,23 +208,45 @@ Node* parse( std::queue<Token>& _tokens ) {
   switch ( headToken.getType() ) {
     case TokenType::NewlineTokenType:
       _tokens.pop();
-      return parse( _tokens );
+      return parseStatement( _tokens, _errorLogger );
       break;
     case TokenType::ConstantTokenType:
     case TokenType::VariableTokenType:
     case TokenType::GroupTokenType:
-      return parseArithmetic( _tokens );
+      return parseArithmetic( _tokens, _errorLogger );
       break;
     case TokenType::KeywordTokenType:
       if ( equals( headToken, "let" ) ) {
-        return parseBinding( _tokens );
-        break;
+        return parseBinding( _tokens, _errorLogger );
       }
+      break;
     default:
+      ( void ) unexpectedToken( headToken, _errorLogger );
+      _tokens.pop();
       break;
   }
 
   return nullptr;
+}
+
+std::queue<Node*> parse( std::queue<Token>& _tokens ) {
+  std::queue<Node*> statements;
+
+  ErrorLogger errorLogger;
+
+  Node* statement = parseStatement( _tokens, errorLogger );
+
+  while ( statement && errorLogger.empty() ) {
+    statements.push( statement );
+    statement = parseStatement( _tokens, errorLogger );
+  }
+
+  if ( !errorLogger.empty() ) {
+    std::cout << "Kubic encountered the following issues --" << std::endl;
+    std::cout << errorLogger.streamErrors().str() << std::endl;
+  }
+
+  return statements;
 }
 
 #endif

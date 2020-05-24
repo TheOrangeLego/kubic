@@ -54,7 +54,7 @@ class Token {
     }
 
     std::string getPosition() const {
-      return ( boost::format( "%1% <%2%,%3%>" ) % getFilename() % getPositionLine() % getPositionCol() ).str();
+      return ( boost::format( "%1% @ <%2%,%3%>" ) % getFilename() % getPositionLine() % getPositionCol() ).str();
     }
 
     unsigned int getPositionLine() const {
