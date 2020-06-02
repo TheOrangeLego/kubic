@@ -71,18 +71,18 @@ static bool tokenizeUndefined( const char _char ) {
 }
 
 static std::map<TokenType, bool (*)(char)> tokenizeConditions = {
-  {TokenType::ConstantTokenType,  tokenizeConstant},
-  {TokenType::VariableTokenType,  tokenizeVariable},
-  {TokenType::KeywordTokenType,   tokenizeKeyword},
-  {TokenType::OperatorTokenType,  tokenizeOperator},
-  {TokenType::GroupTokenType,     tokenizeGroup},
-  {TokenType::UndefinedTokenType, tokenizeUndefined}
+  { TokenType::TokenUndefined, tokenizeUndefined },
+  { TokenType::TokenConstant,  tokenizeConstant },
+  { TokenType::TokenVariable,  tokenizeVariable },
+  { TokenType::TokenGroup,     tokenizeGroup },
+  { TokenType::TokenKeyword,   tokenizeKeyword },
+  { TokenType::TokenOperator,  tokenizeOperator }
 };
 
 /*
  * single item parsing logic - each type of token has a criteria of what characters can appear at what
  *   locations. If any of these criterias are violated, then we are either parsing another type of
- *   token or is an undefined ( invalid ) token. Below are all the criterias for each token type:
+ *   token or it is an undefined/invalid token. Below are all the criterias for each token type:
  * 
  * 1 - Keyword  - only alphabetical characters allowed
  * 2 - Variable - alphanumerical and underscore allowed, where it cannot start with a digit
@@ -91,18 +91,18 @@ static std::map<TokenType, bool (*)(char)> tokenizeConditions = {
  *                whether the digit is octal, decimal, or hexal, respectively
  */
 static Token tokenizeItem(
-  const std::string _input,
-  const unsigned int _line,
+  std::string _input,
+  unsigned int _line,
   unsigned int& _col,
   unsigned int& _position,
   std::string _filename,
   unsigned int& _tokenLength,
-  const unsigned int _inputLength,
-  const TokenType _type
+  unsigned int _inputLength,
+  TokenType _type
 ) {
   char currentChar = _input[_position];
 
-  if ( _type == TokenType::GroupTokenType ) {
+  if ( _type == TokenType::TokenGroup ) {
     std::string tokenString( 1, currentChar );
     _col++;
     _position++;
@@ -116,29 +116,27 @@ static Token tokenizeItem(
     currentChar = _input[++_position];
   }
 
-  if ( _type ==  TokenType::KeywordTokenType && ( isConstant( currentChar ) || isUnderscore( currentChar ) ) ) {
+  if ( _type ==  TokenType::TokenKeyword && ( isConstant( currentChar ) || isUnderscore( currentChar ) ) ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableTokenType
+      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::TokenVariable
     );
   }
   
-  if ( _type != TokenType::OperatorTokenType && _position < _inputLength &&
+  if ( _type != TokenType::TokenOperator && _position < _inputLength &&
        !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::UndefinedTokenType
+      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::TokenUndefined
     );
   }
 
   std::string tokenString = _input.substr( _position - _tokenLength, _tokenLength );
 
-  if (
-    _type == TokenType::KeywordTokenType
-      && !contains( KEYWORDS, tokenString )
-      && !contains( DATA_TYPES, tokenString )
-  ) {
-    return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::VariableTokenType
-    );
+  if ( _type == TokenType::TokenKeyword && contains( CONSTANT_KEYWRDS, tokenString ) ) {
+    _type = TokenType::TokenConstant;
+  }
+
+  if ( _type == TokenType::TokenKeyword && !contains( KEYWORDS, tokenString ) ) {
+    _type = TokenType::TokenVariable;
   }
 
   Token token( tokenString, _type, _line, _col, _filename );
@@ -161,19 +159,19 @@ std::queue<Token> tokenize( const std::string _input, const std::string _filenam
       position++;
       col++;
     } else if ( isNewline( currentChar ) ) {
-      tokens.push( Token( std::string( 1, currentChar ), TokenType::NewlineTokenType, line++, col, _filename ) );
+      tokens.push( Token( std::string( 1, currentChar ), TokenType::TokenNewline, line++, col, _filename ) );
       position++;
       col = 0;
     } else {
       Token token = isGroup( currentChar ) 
-        ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::GroupTokenType )
+        ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenGroup )
         : isOperator( currentChar )
-          ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::OperatorTokenType )
+          ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenOperator )
           : isConstant( currentChar )
-            ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::ConstantTokenType )
+            ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenConstant )
             : isUnderscore( currentChar )
-              ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::VariableTokenType )
-              : tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::KeywordTokenType );
+              ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenVariable )
+              : tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenKeyword );
       tokens.push( token );
     }
   }

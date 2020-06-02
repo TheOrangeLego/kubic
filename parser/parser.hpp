@@ -43,7 +43,13 @@ Node* parseConstant( std::stack<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token constant = _tokens.top();
   _tokens.pop();
 
-  return new ConstantNode( constant );
+  if ( equals( constant, "true" ) ) {
+    return new BooleanNode( constant );
+  } else if ( equals( constant, "false" ) ) {
+    return new BooleanNode( constant );
+  } else {
+    return new IntegerNode( constant );
+  }
 }
 
 Node* parseVariable( std::stack<Token>& _tokens, ErrorLogger& _errorLogger ) {
@@ -84,13 +90,13 @@ Node* parseArithmetic( std::stack<Token>& _tokens, ErrorLogger& _errorLogger, co
   Node* node = nullptr;
 
   switch ( token.getType() ) {
-    case TokenType::ConstantTokenType:
+    case TokenType::TokenConstant:
       node = parseConstant( _tokens, _errorLogger );
       break;
-    case TokenType::VariableTokenType:
+    case TokenType::TokenVariable:
       node = parseVariable( _tokens, _errorLogger );
       break;
-    case TokenType::OperatorTokenType:
+    case TokenType::TokenOperator:
       if ( contains( UNARY_OPERATORS, token.getText() ) ) {
         node = parseUnaryOperator( _tokens, _errorLogger );
       } else {
@@ -121,14 +127,14 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
     _tokens.pop();
 
     switch ( headToken.getType() ) {
-      case TokenType::NewlineTokenType:
+      case TokenType::TokenNewline:
         stopParsing = true;
         break;
-      case TokenType::ConstantTokenType:
-      case TokenType::VariableTokenType:
+      case TokenType::TokenConstant:
+      case TokenType::TokenVariable:
         organizedTokens.push( headToken );
         break;
-      case TokenType::GroupTokenType:
+      case TokenType::TokenGroup:
         if ( equals( headToken, "(" ) ) {
           operatorTokens.push( headToken );
         } else {
@@ -143,7 +149,7 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
           operatorTokens.pop();
         }
         break;
-      case TokenType::OperatorTokenType:
+      case TokenType::TokenOperator:
         if ( !operatorTokens.empty() ) {
           topOperatorToken = operatorTokens.top();
         }
@@ -195,7 +201,7 @@ Node* parseBinding( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
   Node* bindingExpression = parseStatement( _tokens, _errorLogger );
 
-  return new BindingNode( variable, DATA_TYPE_MAPS[typeBinded.getText()], bindingExpression );
+  return new BindingNode( variable, bindingExpression );
 }
 
 Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
@@ -206,16 +212,16 @@ Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token headToken = _tokens.front();
 
   switch ( headToken.getType() ) {
-    case TokenType::NewlineTokenType:
+    case TokenType::TokenNewline:
       _tokens.pop();
       return parseStatement( _tokens, _errorLogger );
       break;
-    case TokenType::ConstantTokenType:
-    case TokenType::VariableTokenType:
-    case TokenType::GroupTokenType:
+    case TokenType::TokenConstant:
+    case TokenType::TokenVariable:
+    case TokenType::TokenGroup:
       return parseArithmetic( _tokens, _errorLogger );
       break;
-    case TokenType::KeywordTokenType:
+    case TokenType::TokenKeyword:
       if ( equals( headToken, "let" ) ) {
         return parseBinding( _tokens, _errorLogger );
       }
