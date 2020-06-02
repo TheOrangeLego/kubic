@@ -92,44 +92,42 @@ static std::map<TokenType, bool (*)(char)> tokenizeConditions = {
  */
 static Token tokenizeItem(
   std::string _input,
-  unsigned int _line,
-  unsigned int& _col,
-  unsigned int& _position,
-  std::string _filename,
+  Position _position,
+  unsigned int& _absolutePosition,
   unsigned int& _tokenLength,
   unsigned int _inputLength,
   TokenType _type
 ) {
-  char currentChar = _input[_position];
+  char currentChar = _input[_absolutePosition];
 
   if ( _type == TokenType::TokenGroup ) {
     std::string tokenString( 1, currentChar );
-    _col++;
-    _position++;
+    _position.space();
+    _absolutePosition++;
 
-    return Token( tokenString, _type, _line, _col, _filename );
+    return Token( tokenString, _type, _position );
   }
 
-  while ( _position < _inputLength && tokenizeConditions[_type]( currentChar ) ) {
+  while ( _absolutePosition < _inputLength && tokenizeConditions[_type]( currentChar ) ) {
     _tokenLength++;
-    _col++;
-    currentChar = _input[++_position];
+    _position.space();
+    currentChar = _input[++_absolutePosition];
   }
 
   if ( _type ==  TokenType::TokenKeyword && ( isConstant( currentChar ) || isUnderscore( currentChar ) ) ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::TokenVariable
+      _input, _position, _absolutePosition, _tokenLength, _inputLength, TokenType::TokenVariable
     );
   }
   
-  if ( _type != TokenType::TokenOperator && _position < _inputLength &&
+  if ( _type != TokenType::TokenOperator && _absolutePosition < _inputLength &&
        !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
     return tokenizeItem(
-      _input, _line, _col, _position, _filename, _tokenLength, _inputLength, TokenType::TokenUndefined
+      _input, _position, _absolutePosition, _tokenLength, _inputLength, TokenType::TokenUndefined
     );
   }
 
-  std::string tokenString = _input.substr( _position - _tokenLength, _tokenLength );
+  std::string tokenString = _input.substr( _absolutePosition - _tokenLength, _tokenLength );
 
   if ( _type == TokenType::TokenKeyword && contains( CONSTANT_KEYWRDS, tokenString ) ) {
     _type = TokenType::TokenConstant;
@@ -139,39 +137,38 @@ static Token tokenizeItem(
     _type = TokenType::TokenVariable;
   }
 
-  Token token( tokenString, _type, _line, _col, _filename );
+  Token token( tokenString, _type, _position );
   _tokenLength = 0;
   return token;
 }
 
 std::queue<Token> tokenize( const std::string _input, const std::string _filename ) {
-  unsigned int line = 0;
-  unsigned int col = 0;
-  unsigned int position = 0;
+  Position position( 0, 0, _filename );
+  unsigned int absolutePosition = 0;
   unsigned int tokenLength = 0;
   unsigned int inputLength = _input.length();
   std::queue<Token> tokens;
 
-  while ( position < inputLength ) {
-    char currentChar = _input[position];
+  while ( absolutePosition < inputLength ) {
+    char currentChar = _input[absolutePosition];
 
     if ( isWhitespace( currentChar ) ) {
-      position++;
-      col++;
+      absolutePosition++;
+      position.space();
     } else if ( isNewline( currentChar ) ) {
-      tokens.push( Token( std::string( 1, currentChar ), TokenType::TokenNewline, line++, col, _filename ) );
-      position++;
-      col = 0;
+      tokens.push( Token( std::string( 1, currentChar ), TokenType::TokenNewline, position ) );
+      position.newline();
+      absolutePosition++;
     } else {
       Token token = isGroup( currentChar ) 
-        ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenGroup )
+        ? tokenizeItem( _input, position, absolutePosition, tokenLength, inputLength, TokenType::TokenGroup )
         : isOperator( currentChar )
-          ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenOperator )
+          ? tokenizeItem( _input, position, absolutePosition, tokenLength, inputLength, TokenType::TokenOperator )
           : isConstant( currentChar )
-            ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenConstant )
+            ? tokenizeItem( _input, position, absolutePosition, tokenLength, inputLength, TokenType::TokenConstant )
             : isUnderscore( currentChar )
-              ? tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenVariable )
-              : tokenizeItem( _input, line, col, position, _filename, tokenLength, inputLength, TokenType::TokenKeyword );
+              ? tokenizeItem( _input, position, absolutePosition, tokenLength, inputLength, TokenType::TokenVariable )
+              : tokenizeItem( _input, position, absolutePosition, tokenLength, inputLength, TokenType::TokenKeyword );
       tokens.push( token );
     }
   }

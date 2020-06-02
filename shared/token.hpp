@@ -6,17 +6,49 @@
 
 #include "shared/types.hpp"
 
-typedef struct {
-  unsigned int line;
-  unsigned int col;
-  std::string filename;
-} TokenPosition;
+class Position {
+  protected:
+    unsigned int line;
+    unsigned int column;
+    std::string filename;
+
+  public:
+    Position( unsigned int _line = 0, unsigned int _column = 0, std::string _filename = "" )
+      : line( _line ), column( _column ), filename( _filename ) {}
+
+    unsigned int getLine() const {
+      return line;
+    }
+
+    unsigned int getColumn() const {
+      return column;
+    }
+
+    std::string getFilename() const {
+      return filename;
+    }
+
+    void setPosition( const unsigned int _line, const unsigned int _column, const std::string _filename ) {
+      line = _line;
+      column = _column;
+      filename = _filename;
+    }
+
+    void space() {
+      column++;
+    }
+
+    void newline() {
+      line++;
+      column = 0;
+    }
+};
 
 class Token {
   private:
     std::string text;
     TokenType type;
-    TokenPosition position;
+    Position position;
 
   public:
     Token() {}
@@ -24,13 +56,11 @@ class Token {
     Token(
       const std::string _text,
       const TokenType _type,
-      const unsigned int _line,
-      const unsigned int _col,
-      const std::string _filename
+      const Position _position
     ) {
       setText( _text );
       setType( _type );
-      setPosition( _line, _col, _filename );
+      position = _position;
     }
 
     void setText( const std::string _text ) {
@@ -39,10 +69,6 @@ class Token {
 
     void setType( const TokenType _type ) {
       type = _type;
-    }
-
-    void setPosition( const unsigned int _line, const unsigned int _col, const std::string _filename ) {
-      position = { _line, _col, _filename };
     }
 
     std::string getText() const {
@@ -54,19 +80,19 @@ class Token {
     }
 
     std::string getPosition() const {
-      return ( boost::format( "%1% @ <%2%,%3%>" ) % getFilename() % getPositionLine() % getPositionCol() ).str();
+      return ( boost::format( "%1% @ <%2%,%3%>" ) % getFilename() % getPositionLine() % getPositionColumn() ).str();
     }
 
     unsigned int getPositionLine() const {
-      return position.line;
+      return position.getLine();
     }
 
-    unsigned int getPositionCol() const {
-      return position.col;
+    unsigned int getPositionColumn() const {
+      return position.getColumn();
     }
 
     std::string getFilename() const {
-      return position.filename;
+      return position.getFilename();
     }
 };
 

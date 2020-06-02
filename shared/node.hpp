@@ -54,20 +54,76 @@ class Node {
     ) const = 0;
 };
 
-class ConstantNode : public Node {
+std::string formatValue( const NodeType _nodeType, const Token _token ) {
+  int convertedValue;
+  std::string value = _token.getText();
+  std::string frontBase = value.substr( 0, 2 );
+
+  switch ( _nodeType ) {
+    case NodeType::NodeBoolean:
+      if ( equals( value, "false" ) ) {
+        return "0x7FFFFFFFFFFFFFFF";
+      } else {
+        return "0xFFFFFFFFFFFFFFFF";
+      }
+      break;
+    case NodeType::NodeInteger:
+      if ( equals( frontBase, "0x" ) ) {
+        convertedValue = std::stoi( frontBase.substr( 2 ), nullptr, 16 );
+      } else if ( equals( frontBase, "0o" ) ) {
+        convertedValue = std::stoi( frontBase.substr( 2 ), nullptr, 8 );
+      } else if ( equals( frontBase, "0b" ) ) {
+        convertedValue = std::stoi( frontBase.substr( 2 ), nullptr, 2 );
+      } else {
+        convertedValue = std::stoi( frontBase );
+      }
+
+      convertedValue = convertedValue << 1;
+
+      return std::to_string( convertedValue );
+      break;
+    case NodeType::NodeString:
+      /* TODO -- add support for strings */
+      return "";
+      break;
+    default:
+      /* this should never be reached, otherwise it was called by mistake! */
+      return "BEEFDADA";
+      break;
+  }
+}
+
+class BooleanNode : public Node {
   protected:
-    Token constant;
+    Token boolean;
 
   public:
-    ConstantNode( const Token _token ) : constant( _token ) {
-      nodeType = NodeType::ConstantNodeType;
+    BooleanNode( const Token _token ) : boolean( _token ) {
+      nodeType = NodeType::NodeBoolean;
     }
 
-    ~ConstantNode() {}
+    ~BooleanNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
     std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      return printSingle( "  mov qword rax, %1%\n", constant.getText() );
+      return moveReg( Register::RAX, formatValue( nodeType, boolean ) );
+    }
+};
+
+class IntegerNode : public Node {
+  protected:
+    Token integer;
+
+  public:
+    IntegerNode( const Token _token ) : integer( _token ) {
+      nodeType = NodeType::NodeInteger;
+    }
+
+    ~IntegerNode() {}
+
+    #pragma GCC diagnostic ignored "-Wunused-parameter"
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+      return moveReg( Register::RAX, formatValue( nodeType, integer ) );
     }
 };
 
@@ -77,14 +133,37 @@ class VariableNode : public Node {
 
   public:
     VariableNode( const Token _token ) : variable( _token ) {
-      nodeType = NodeType::VariableNodeType;
+      nodeType = NodeType::NodeVariable;
     }
 
     ~VariableNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
     std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      return printSingle( "  mov rax, %1%\n", regOffset( RSI, searchBinding( _environment, variable ) ) );
+      return moveReg( Register::RAX, regOffset( RSI, searchBinding( _environment, variable ) ) );
+    }
+};
+
+class BindingNode : public Node {
+  protected:
+    Token variable;
+    Node* bindingExpression;
+
+  public:
+    BindingNode( const Token _variable, Node* _bindingExpression )
+      : variable( _variable ), bindingExpression( _bindingExpression ) {
+      nodeType = NodeType::NodeBinding;
+    }
+
+    ~BindingNode() {
+      if ( bindingExpression ) delete bindingExpression;
+    }
+
+    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+      *representation << bindingExpression->compile( _environment );
+      *representation << moveReg( regOffset( Register::RSI, _offset ), Register::RAX );
+      insertBinding( _environment, variable );
+      return representation->str();
     }
 };
 
@@ -96,7 +175,7 @@ class UnaryOperatorNode : public Node {
   public:
     UnaryOperatorNode( const Token _uOperator, Node* _operand ) :
       uOperator( _uOperator ), operand( _operand ) {
-      nodeType = NodeType::UnaryOperatorNodeType;
+      nodeType = NodeType::NodeUnaryOperator;
     }
 
     ~UnaryOperatorNode() {
@@ -117,9 +196,9 @@ class BinaryOperatorNode : public Node {
     Node* rOperand;
 
   public:
-    BinaryOperatorNode( const Token _bOperator, Node* _lOperand, Node* _rOperand ) :
-      bOperator( _bOperator ), lOperand( _lOperand ), rOperand( _rOperand ) {
-      nodeType = NodeType::BinaryOperatorNodeType;
+    BinaryOperatorNode( const Token _bOperator, Node* _lOperand, Node* _rOperand )
+      : bOperator( _bOperator ), lOperand( _lOperand ), rOperand( _rOperand ) {
+      nodeType = NodeType::NodeBinaryOperator;
     }
 
     ~BinaryOperatorNode() {
@@ -129,43 +208,24 @@ class BinaryOperatorNode : public Node {
 
     std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
       *representation << rOperand->compile( _environment );
-      formatSingle( representation, "  mov %1%, rax\n", regOffset( RSI, _offset ) );
+      *representation << moveReg( regOffset( Register::RSI, _offset ), Register::RAX );
       *representation << lOperand->compile( _environment, _offset + 1 );
 
+      std::string binaryOperator;
+
       if ( equals( bOperator.getText(), "+" ) ) {
-        formatSingle( representation, "  add rax, %1%\n", regOffset( RSI, _offset ) );
+        binaryOperator = "add";
       } else if ( equals( bOperator.getText(), "-" ) ) {
-        formatSingle( representation, "  sub rax, %1%\n", regOffset( RSI, _offset ) );
+        binaryOperator = "sub";
       } else if ( equals( bOperator.getText(), "*" ) ) {
-        formatSingle( representation, "  imul rax, %1%\n", regOffset( RSI, _offset ) );
+        binaryOperator = "imul";
+        *representation << operateReg( "sar", Register::RAX, "1" );
       } else if ( equals( bOperator.getText(), "/" ) ) {
-        formatSingle( representation, "  idiv rax, %1%\n", regOffset( RSI, _offset ) );
+        binaryOperator = "idiv";
       }
 
-      return representation->str();
-    }
-};
+      *representation << operateReg( binaryOperator, Register::RAX, regOffset( Register::RSI, _offset ) );
 
-class BindingNode : public Node {
-  protected:
-    Token variable;
-    DataType dataType;
-    Node* bindingExpression;
-
-  public:
-    BindingNode( const Token _variable, DataType _dataType, Node* _bindingExpression ) :
-      variable( _variable ), dataType( _dataType ), bindingExpression( _bindingExpression ) {
-      nodeType = NodeType::BindingNodeType;
-    }
-
-    ~BindingNode() {
-      if ( bindingExpression ) delete bindingExpression;
-    }
-
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      *representation << bindingExpression->compile( _environment );
-      formatSingle( representation, "  mov %1%, rax\n", regOffset( RSI, _offset ) );
-      insertBinding( _environment, variable );
       return representation->str();
     }
 };
