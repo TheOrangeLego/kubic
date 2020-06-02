@@ -5,7 +5,7 @@ Kubic is an open source programming language meant to be consice and fast.
 ### Motivation
 
 Coming from a background in static type languages, I appreciated the simplistic syntax from Python, though I was never
-a fan of it's dynamic type system. Instead of relying on additional frameworks or libraries, Kubic at its core is a
+a fan of its dynamic type system. Instead of relying on additional frameworks or libraries, Kubic at its core is a
 static type, non-verbose programming language.
 
 ### Sample Code
