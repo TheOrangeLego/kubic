@@ -6,53 +6,37 @@
 #include <vector>
 
 #include "compiler/assembly.hpp"
+#include "shared/error.hpp"
 #include "shared/helpers.hpp"
 #include "shared/token.hpp"
 #include "shared/types.hpp"
 
 static unsigned int stackOffset = 0;
 
-typedef std::pair<Token, unsigned int> EnvironmentBinding;
+typedef std::tuple<Token, unsigned int, NodeType> EnvironmentBinding;
 
 typedef std::vector<EnvironmentBinding> Environment;
 
-void insertBinding( Environment& _environment, Token _token ) {
-  _environment.push_back( EnvironmentBinding( _token, stackOffset ) );
+void insertBinding( Environment& _environment, const Token _token, const NodeType _dataType ) {
+  _environment.push_back( EnvironmentBinding( _token, stackOffset, _dataType ) );
   stackOffset++;
 }
 
-unsigned int searchBinding( Environment& _environment, Token _token ) {
+unsigned int getBindingOffset( Environment& _environment, const Token _token ) {
   for ( EnvironmentBinding binding : _environment ) {
-    if ( equals( binding.first, _token ) ) {
-      return binding.second;
+    if ( equals( std::get<0>( binding ), _token ) ) {
+      return std::get<1>( binding );
     }
   }
-
-  return 0;
 }
 
-class Node {
-  protected:
-    std::stringstream* representation;
-    NodeType nodeType;
-
-  public:
-    Node() {
-      representation = new std::stringstream();
+NodeType getBindingNodeType( Environment& _environment, const Token _token ) {
+  for ( EnvironmentBinding binding : _environment ) {
+    if ( equals( std::get<0>( binding ), _token ) ) {
+      return std::get<2>( binding );
     }
-
-    virtual ~Node() {
-      if ( representation ) delete representation;
-    }
-
-    virtual NodeType getType() const {
-      return nodeType;
-    }
-
-    virtual std::string compile(
-      Environment& _environment, unsigned int _offset = stackOffset
-    ) const = 0;
-};
+  }
+}
 
 std::string formatValue( const NodeType _nodeType, const Token _token ) {
   int convertedValue;
@@ -93,6 +77,37 @@ std::string formatValue( const NodeType _nodeType, const Token _token ) {
   }
 }
 
+class Node {
+  protected:
+    std::stringstream* representation;
+    NodeType nodeType;
+
+  public:
+    Node() {
+      representation = new std::stringstream();
+    }
+
+    virtual ~Node() {
+      if ( representation ) delete representation;
+    }
+
+    virtual NodeType getNodeType() const {
+      return nodeType;
+    }
+
+    virtual std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const = 0;
+};
+
+bool matchesNodeType( const Node* _node, const NodeType _nodeType ) {
+  return _node->getNodeType() == _nodeType;
+}
+
+bool matchesNodeType( const Node* _nodeA, const NodeType _nodeTypeA, const Node* _nodeB, const NodeType _nodeTypeB ) {
+  return matchesNodeType( _nodeA, _nodeTypeA ) && matchesNodeType( _nodeB, _nodeTypeB );
+}
+
 class BooleanNode : public Node {
   protected:
     Token boolean;
@@ -105,7 +120,9 @@ class BooleanNode : public Node {
     ~BooleanNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+    std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const {
       return moveReg( Register::RAX, formatValue( nodeType, boolean ) );
     }
 };
@@ -122,7 +139,9 @@ class IntegerNode : public Node {
     ~IntegerNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
+    std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const {
       return moveReg( Register::RAX, formatValue( nodeType, integer ) );
     }
 };
@@ -139,19 +158,22 @@ class VariableNode : public Node {
     ~VariableNode() {}
 
     #pragma GCC diagnostic ignored "-Wunused-parameter"
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      return moveReg( Register::RAX, regOffset( RSI, searchBinding( _environment, variable ) ) );
+    std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const {
+      return moveReg( Register::RAX, regOffset( RSI, getBindingOffset( _environment, variable ) ) );
     }
 };
 
 class BindingNode : public Node {
   protected:
     Token variable;
+    Token typeBinded;
     Node* bindingExpression;
 
   public:
-    BindingNode( const Token _variable, Node* _bindingExpression )
-      : variable( _variable ), bindingExpression( _bindingExpression ) {
+    BindingNode( const Token _variable, const Token _typeBinded, Node* _bindingExpression )
+      : variable( _variable ), typeBinded( _typeBinded ), bindingExpression( _bindingExpression ) {
       nodeType = NodeType::NodeBinding;
     }
 
@@ -159,10 +181,19 @@ class BindingNode : public Node {
       if ( bindingExpression ) delete bindingExpression;
     }
 
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      *representation << bindingExpression->compile( _environment );
+    std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const {
+      if (
+        STRING_TO_NODE_TYPE.find( typeBinded.getText() ) != STRING_TO_NODE_TYPE.end()
+        && STRING_TO_NODE_TYPE.at( typeBinded.getText() ) != bindingExpression->getNodeType()
+      ) {
+        /* type-mismatch between assigned type and infered body type */
+      }
+
+      *representation << bindingExpression->compile( _environment, _errorLogger );
       *representation << moveReg( regOffset( Register::RSI, _offset ), Register::RAX );
-      insertBinding( _environment, variable );
+      insertBinding( _environment, variable, bindingExpression->getNodeType() );
       return representation->str();
     }
 };
@@ -175,15 +206,16 @@ class UnaryOperatorNode : public Node {
   public:
     UnaryOperatorNode( const Token _uOperator, Node* _operand ) :
       uOperator( _uOperator ), operand( _operand ) {
-      nodeType = NodeType::NodeUnaryOperator;
     }
 
     ~UnaryOperatorNode() {
       if ( operand ) delete operand;
     }
 
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      *representation << operand->compile( _environment );
+    std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const {
+      *representation << operand->compile( _environment, _errorLogger );
 
       return representation->str();
     }
@@ -198,7 +230,13 @@ class BinaryOperatorNode : public Node {
   public:
     BinaryOperatorNode( const Token _bOperator, Node* _lOperand, Node* _rOperand )
       : bOperator( _bOperator ), lOperand( _lOperand ), rOperand( _rOperand ) {
-      nodeType = NodeType::NodeBinaryOperator;
+      BinaryTypeInference typeInfered( _lOperand->getNodeType(), _bOperator.getText(), _rOperand->getNodeType() );
+
+      if ( BINARY_OPERATOR_INFERED_TYPES.find( typeInfered ) == BINARY_OPERATOR_INFERED_TYPES.end() ) {
+        /* TODO -- static type error */
+      }
+
+      nodeType = BINARY_OPERATOR_INFERED_TYPES.at(typeInfered);
     }
 
     ~BinaryOperatorNode() {
@@ -206,22 +244,27 @@ class BinaryOperatorNode : public Node {
       if ( rOperand ) delete rOperand;
     }
 
-    std::string compile( Environment& _environment, unsigned int _offset = stackOffset ) const {
-      *representation << rOperand->compile( _environment );
+    std::string compile(
+      Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
+    ) const {
+      *representation << rOperand->compile( _environment, _errorLogger );
       *representation << moveReg( regOffset( Register::RSI, _offset ), Register::RAX );
-      *representation << lOperand->compile( _environment, _offset + 1 );
+      *representation << lOperand->compile( _environment, _errorLogger, _offset + 1 );
 
       std::string binaryOperator;
 
-      if ( equals( bOperator.getText(), "+" ) ) {
-        binaryOperator = "add";
-      } else if ( equals( bOperator.getText(), "-" ) ) {
-        binaryOperator = "sub";
-      } else if ( equals( bOperator.getText(), "*" ) ) {
-        binaryOperator = "imul";
-        *representation << operateReg( "sar", Register::RAX, "1" );
-      } else if ( equals( bOperator.getText(), "/" ) ) {
-        binaryOperator = "idiv";
+      /* might be able to do without this if we combine assembly instructions with BINARY_OPERATOR_INFERED_TYPES */
+      if ( matchesNodeType( lOperand, NodeType::NodeInteger, rOperand, NodeType::NodeInteger ) ) {
+        if ( equals( bOperator.getText(), "+" ) ) {
+          binaryOperator = "add";
+        } else if ( equals( bOperator.getText(), "-" ) ) {
+          binaryOperator = "sub";
+        } else if ( equals( bOperator.getText(), "*" ) ) {
+          binaryOperator = "imul";
+          *representation << operateReg( "sar", Register::RAX, "1" );
+        } else if ( equals( bOperator.getText(), "/" ) ) {
+          binaryOperator = "idiv";
+        }
       }
 
       *representation << operateReg( binaryOperator, Register::RAX, regOffset( Register::RSI, _offset ) );

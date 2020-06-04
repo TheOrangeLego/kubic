@@ -75,7 +75,7 @@ class Token {
       return text;
     }
 
-    TokenType getType() const {
+    TokenType getNodeType() const {
       return type;
     }
 

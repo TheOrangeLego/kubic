@@ -5,6 +5,7 @@
 #include <queue>
 #include <string>
 
+#include "shared/error.hpp"
 #include "shared/node.hpp"
 
 std::string compileStatements( std::queue<Node*> _statements ) {
@@ -12,15 +13,26 @@ std::string compileStatements( std::queue<Node*> _statements ) {
 
   Environment environment;
 
+  ErrorLogger errorLogger;
+
   unsigned int stackOffset = 0;
 
   while ( !_statements.empty() ) {
     Node* statement = _statements.front();
     _statements.pop();
     
-    compilationResult += statement->compile( environment, stackOffset++ );
+    if ( errorLogger.empty() ) {
+      compilationResult += statement->compile( environment, errorLogger, stackOffset++ );
+    }
 
     delete statement;
+  }
+
+  if ( !errorLogger.empty() ) {
+    std::cout << "Kubic encountered the following issues --" << std::endl;
+    std::cout << errorLogger.streamErrors().str() << std::endl;
+
+    return "";
   }
 
   return compilationResult;
@@ -28,6 +40,10 @@ std::string compileStatements( std::queue<Node*> _statements ) {
 
 void compile( std::queue<Node*> _statements, const std::string _filename ) {
   std::string generatedCode = compileStatements( _statements );
+
+  if ( !generatedCode.length() ) {
+    return;
+  }
 
   std::string asmFilename = _filename + ".ka";
 

@@ -38,6 +38,20 @@ const std::set<std::string> BINARY_OPERATORS {
   "=", "=="
 };
 
+typedef std::tuple<NodeType, std::string, NodeType> BinaryTypeInference;
+
+const std::map<BinaryTypeInference, NodeType> BINARY_OPERATOR_INFERED_TYPES = {
+  { BinaryTypeInference( NodeType::NodeInteger, "+", NodeType::NodeInteger ), NodeType::NodeInteger },
+  { BinaryTypeInference( NodeType::NodeInteger, "-", NodeType::NodeInteger ), NodeType::NodeInteger },
+  { BinaryTypeInference( NodeType::NodeInteger, "*", NodeType::NodeInteger ), NodeType::NodeInteger },
+  { BinaryTypeInference( NodeType::NodeInteger, "/", NodeType::NodeInteger ), NodeType::NodeInteger }
+};
+
+const std::map<std::string, NodeType> STRING_TO_NODE_TYPE = {
+  { "Boolean", NodeType::NodeBoolean },
+  { "Integer", NodeType::NodeInteger }
+};
+
 std::map<std::string, unsigned int> OPERATOR_PRIORITIES = {
   { "(", 0 }, { ")", 0 },
   { "+", 1 }, { "-", 1 },

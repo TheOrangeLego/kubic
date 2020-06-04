@@ -89,7 +89,7 @@ Node* parseArithmetic( std::stack<Token>& _tokens, ErrorLogger& _errorLogger, co
   Token token = _tokens.top();
   Node* node = nullptr;
 
-  switch ( token.getType() ) {
+  switch ( token.getNodeType() ) {
     case TokenType::TokenConstant:
       node = parseConstant( _tokens, _errorLogger );
       break;
@@ -126,7 +126,7 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
     headToken = _tokens.front();
     _tokens.pop();
 
-    switch ( headToken.getType() ) {
+    switch ( headToken.getNodeType() ) {
       case TokenType::TokenNewline:
         stopParsing = true;
         break;
@@ -201,7 +201,7 @@ Node* parseBinding( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   ( void ) emptyTokens( _tokens, bindKeyword, _errorLogger );
   Node* bindingExpression = parseStatement( _tokens, _errorLogger );
 
-  return new BindingNode( variable, bindingExpression );
+  return new BindingNode( variable, typeBinded, bindingExpression );
 }
 
 Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
@@ -211,7 +211,7 @@ Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
 
   Token headToken = _tokens.front();
 
-  switch ( headToken.getType() ) {
+  switch ( headToken.getNodeType() ) {
     case TokenType::TokenNewline:
       _tokens.pop();
       return parseStatement( _tokens, _errorLogger );

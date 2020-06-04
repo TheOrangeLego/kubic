@@ -30,7 +30,7 @@ inline bool equals( const Token _token, const std::string _string ) {
 }
 
 inline bool equals( const Token _token, const TokenType _type ) {
-  return _token.getType() == _type;
+  return _token.getNodeType() == _type;
 }
 
 #endif
