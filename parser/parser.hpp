@@ -249,7 +249,7 @@ std::queue<Node*> parse( std::queue<Token>& _tokens ) {
 
   if ( !errorLogger.empty() ) {
     std::cout << "Kubic encountered the following issues --" << std::endl;
-    std::cout << errorLogger.streamErrors().str() << std::endl;
+    std::cout << errorLogger.getErrors() << std::endl;
   }
 
   return statements;

@@ -5,77 +5,69 @@
 #include <map>
 #include <queue>
 #include <sstream>
+#include <stdarg.h>
 
 #include "shared/token.hpp"
+#include "shared/types.hpp"
 
-typedef std::pair<unsigned int, Token> Error;
+/* parser error messages */
+const std::string
+  ERR_UNEXPECTED_TOKEN = "unexpected token [%1%]",
+  ERR_UNEXPECTED_TERMINATION = "unexpected end of statement after [%2%]",
+  ERR_EXPECTED_TOKEN = "unexpected token [%1%], was expecting token [%2%]",
+  ERR_EXPECTED_TERMINATION = "expected end of statement after token [%1%]";
 
-/* setup and environment errors */
-const unsigned int
-  INFRA_ERROR_BOUND = 200;
+/* compiler error messages */
+const std::string
+  ERR_UNDEFINED_VARIABLE = "undefined variable '%1%' referenced",
+  ERR_UNARY_OPERATOR_TYPE_MISMATCH = "invalid type used for operator [%1%], given [%2%] type",
+  ERR_BINARY_OPERATOR_TYPE_MISMATCH = "invalid types used for operator '%1%', given left [%2%] and right [%3%] types",
+  ERR_BINDING_BODY_TYPE_MISMATCH = "cannot bind variable of type [%1%] to body of type [%2%]";
 
-/* parser errors */
-const unsigned int
-  ERR_UNEXPECTED_TOKEN = 201,
-  ERR_UNEXPECTED_TERMINATION = 202,
-  ERR_EXPECTED_TOKEN = 203,
-  ERR_EXPECTED_TERMINATION = 204,
-
-  PARSER_ERROR_BOUND = 400;
-
-/* compiler errors */
-const unsigned int
-  COMPILER_ERROR_BOUND = 600;
-
-const std::map<unsigned int, std::string> ERROR_MESSAGES = {
-  { ERR_UNEXPECTED_TOKEN, "unexpected token %s" },
-  { ERR_UNEXPECTED_TERMINATION, "unexpected termination of statement for %s" },
-  { ERR_EXPECTED_TOKEN, "expected token %s" },
-  { ERR_EXPECTED_TERMINATION, "expected termination of statement for %s" }
-};
+/* forward declaration */
+class Node;
 
 class ErrorLogger {
+  protected:
+    std::stringstream errors;
+
+    void logError( boost::format& _message ) {
+      errors << " -- " << boost::str( _message ) << std::endl;
+    }
+
+    template<typename... Arguments>
+    void logError( boost::format& _message, Token _token, Arguments... _arguments ) {
+      logError( _message % _token.getText(), _arguments... );
+    }
+
+    template<typename... Arguments>
+    void logError( boost::format& _message, Node* _node, Arguments... _arguments ) {
+      logError( _message % NODE_TYPE_STRING.at( _node->getNodeType() ), _arguments... );
+    }
+
   public:
     ErrorLogger() {
       /* literally does nothing */
     }
 
-    bool empty() const {
-      return errors.empty();
+    bool empty() {
+      int size = 0;
+
+      errors.seekg( 0, std::ios::end );
+      size = errors.tellg();
+      errors.seekg( 0, std::ios::beg );
+
+      return size == 0;
     }
 
-    std::stringstream streamErrors() {
-      std::stringstream stream;
-
-      while ( !errors.empty() ) {
-        stream << translateError( errors.front() ) << std::endl;
-        errors.pop();
-      }
-
-      return stream;
+    std::string getErrors() {
+      return errors.str();
     }
 
-    void logError( const unsigned int _code, const Token _token ) {
-      errors.push( Error( _code, _token ) );
-    }
-
-  protected:
-    std::queue<Error> errors;
-
-    std::string translateError( const Error _error ) {
-      std::string errorMessage;
-
-      if ( errors.empty() ) {
-        return errorMessage;
-      } else if ( _error.first % 200 < 100 ) {
-        errorMessage = ( boost::format( ERROR_MESSAGES.at( _error.first ) ) % _error.second.getText() ).str();
-      } else {
-        errorMessage = ( boost::format( ERROR_MESSAGES.at( _error.first ) ) % _error.second.getText() ).str();
-      }
-
-      errorMessage = ( boost::format( "  %s :: " ) % _error.second.getPosition() ).str() + errorMessage;
-
-      return errorMessage;
+    template<typename... Arguments>
+    void logError( std::string _errorMessage, Arguments... _arguments ) {
+      boost::format baseMessage( _errorMessage );
+      logError( baseMessage, _arguments... );
     }
 };
 

@@ -12,13 +12,20 @@ enum TokenType {
 };
 
 enum NodeType {
+  NodeUndefined,
   NodeBoolean,
   NodeInteger,
   NodeString,
   NodeVariable,
-  NodeBinding,
-  NodeUnaryOperator,
-  NodeBinaryOperator,
+  NodeBinding
+};
+
+const std::map<NodeType, std::string> NODE_TYPE_STRING = {
+  { NodeUndefined, "undefined" },
+  { NodeBoolean, "Boolean" },
+  { NodeInteger, "Integer" },
+  { NodeString, "String" },
+  { NodeBinding, "undefined" }
 };
 
 #endif

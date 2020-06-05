@@ -30,7 +30,7 @@ std::string compileStatements( std::queue<Node*> _statements ) {
 
   if ( !errorLogger.empty() ) {
     std::cout << "Kubic encountered the following issues --" << std::endl;
-    std::cout << errorLogger.streamErrors().str() << std::endl;
+    std::cout << errorLogger.getErrors() << std::endl;
 
     return "";
   }

@@ -22,12 +22,15 @@ void insertBinding( Environment& _environment, const Token _token, const NodeTyp
   stackOffset++;
 }
 
-unsigned int getBindingOffset( Environment& _environment, const Token _token ) {
+unsigned int getBindingOffset( Environment& _environment, const Token _token, ErrorLogger& _errorLogger ) {
   for ( EnvironmentBinding binding : _environment ) {
     if ( equals( std::get<0>( binding ), _token ) ) {
       return std::get<1>( binding );
     }
   }
+
+  _errorLogger.logError( ERR_UNDEFINED_VARIABLE, _token );
+  return 0;
 }
 
 NodeType getBindingNodeType( Environment& _environment, const Token _token ) {
@@ -36,6 +39,8 @@ NodeType getBindingNodeType( Environment& _environment, const Token _token ) {
       return std::get<2>( binding );
     }
   }
+
+  return NodeType::NodeUndefined;
 }
 
 std::string formatValue( const NodeType _nodeType, const Token _token ) {
@@ -75,6 +80,8 @@ std::string formatValue( const NodeType _nodeType, const Token _token ) {
       return "BEEFDADA";
       break;
   }
+
+  return "";
 }
 
 class Node {
@@ -161,7 +168,7 @@ class VariableNode : public Node {
     std::string compile(
       Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
     ) const {
-      return moveReg( Register::RAX, regOffset( RSI, getBindingOffset( _environment, variable ) ) );
+      return moveReg( Register::RAX, regOffset( RSI, getBindingOffset( _environment, variable, _errorLogger ) ) );
     }
 };
 
@@ -188,7 +195,7 @@ class BindingNode : public Node {
         STRING_TO_NODE_TYPE.find( typeBinded.getText() ) != STRING_TO_NODE_TYPE.end()
         && STRING_TO_NODE_TYPE.at( typeBinded.getText() ) != bindingExpression->getNodeType()
       ) {
-        /* type-mismatch between assigned type and infered body type */
+        _errorLogger.logError( ERR_BINDING_BODY_TYPE_MISMATCH, typeBinded, bindingExpression );
       }
 
       *representation << bindingExpression->compile( _environment, _errorLogger );
@@ -230,13 +237,13 @@ class BinaryOperatorNode : public Node {
   public:
     BinaryOperatorNode( const Token _bOperator, Node* _lOperand, Node* _rOperand )
       : bOperator( _bOperator ), lOperand( _lOperand ), rOperand( _rOperand ) {
-      BinaryTypeInference typeInfered( _lOperand->getNodeType(), _bOperator.getText(), _rOperand->getNodeType() );
+      BinaryTypeInference inferedTypeMap( _lOperand->getNodeType(), _bOperator.getText(), _rOperand->getNodeType() );
 
-      if ( BINARY_OPERATOR_INFERED_TYPES.find( typeInfered ) == BINARY_OPERATOR_INFERED_TYPES.end() ) {
-        /* TODO -- static type error */
+      if ( BINARY_OPERATOR_INFERED_TYPES.find( inferedTypeMap ) == BINARY_OPERATOR_INFERED_TYPES.end() ) {
+        nodeType = NodeType::NodeUndefined;
+      } else {
+        nodeType = BINARY_OPERATOR_INFERED_TYPES.at(inferedTypeMap);
       }
-
-      nodeType = BINARY_OPERATOR_INFERED_TYPES.at(typeInfered);
     }
 
     ~BinaryOperatorNode() {
@@ -247,6 +254,14 @@ class BinaryOperatorNode : public Node {
     std::string compile(
       Environment& _environment, ErrorLogger& _errorLogger, unsigned int _offset = stackOffset
     ) const {
+      BinaryTypeInference inferedTypeMap( lOperand->getNodeType(), bOperator.getText(), rOperand->getNodeType() );
+
+      if ( BINARY_OPERATOR_INFERED_TYPES.find( inferedTypeMap ) == BINARY_OPERATOR_INFERED_TYPES.end() ) {
+        _errorLogger.logError( ERR_BINARY_OPERATOR_TYPE_MISMATCH, bOperator, lOperand, rOperand );
+
+        return "";
+      }
+
       *representation << rOperand->compile( _environment, _errorLogger );
       *representation << moveReg( regOffset( Register::RSI, _offset ), Register::RAX );
       *representation << lOperand->compile( _environment, _errorLogger, _offset + 1 );
