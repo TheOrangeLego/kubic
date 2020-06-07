@@ -4,6 +4,7 @@
 #include <boost/format.hpp>
 #include <string>
 
+#include "shared/helpers.hpp"
 #include "shared/types.hpp"
 
 class Position {
@@ -75,7 +76,7 @@ class Token {
       return text;
     }
 
-    TokenType getNodeType() const {
+    TokenType getTokenType() const {
       return type;
     }
 
@@ -95,5 +96,25 @@ class Token {
       return position.getFilename();
     }
 };
+
+bool operator< ( const Token& _tokenA, const Token& _tokenB ) {
+  return _tokenA.getText() < _tokenB.getText();
+}
+
+bool operator== ( const Token& _tokenA, const Token& _tokenB ) {
+  return _tokenA.getText() == _tokenB.getText();
+}
+
+bool operator== ( const Token& _token, const std::string _string ) {
+  return _token.getText() == _string;
+}
+
+bool operator!= ( const Token& _token, const std::string _string ) {
+  return !( _token == _string );
+}
+
+bool operator== ( const Token& _token, const TokenType _type ) {
+  return _token.getTokenType() == _type;
+}
 
 #endif

@@ -29,8 +29,8 @@ void unexpectedToken( const Token _token, ErrorLogger& _errorLogger ) {
 }
 
 void unexpectedToken( const Token _token, const std::string _expectedToken, ErrorLogger& _errorLogger ) {
-  if ( !equals( _token, _expectedToken ) ) {
-    _errorLogger.logError( ERR_UNEXPECTED_TOKEN, _token );
+  if ( _token != _expectedToken ) {
+    _errorLogger.logError( ERR_EXPECTED_TOKEN, _token, _expectedToken );
   }
 }
 
@@ -43,9 +43,9 @@ Node* parseConstant( std::stack<Token>& _tokens, ErrorLogger& _errorLogger ) {
   Token constant = _tokens.top();
   _tokens.pop();
 
-  if ( equals( constant, "true" ) ) {
+  if ( constant == "true" ) {
     return new BooleanNode( constant );
-  } else if ( equals( constant, "false" ) ) {
+  } else if ( constant == "false" ) {
     return new BooleanNode( constant );
   } else {
     return new IntegerNode( constant );
@@ -89,7 +89,7 @@ Node* parseArithmetic( std::stack<Token>& _tokens, ErrorLogger& _errorLogger, co
   Token token = _tokens.top();
   Node* node = nullptr;
 
-  switch ( token.getNodeType() ) {
+  switch ( token.getTokenType() ) {
     case TokenType::TokenConstant:
       node = parseConstant( _tokens, _errorLogger );
       break;
@@ -126,7 +126,7 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
     headToken = _tokens.front();
     _tokens.pop();
 
-    switch ( headToken.getNodeType() ) {
+    switch ( headToken.getTokenType() ) {
       case TokenType::TokenNewline:
         stopParsing = true;
         break;
@@ -135,15 +135,15 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
         organizedTokens.push( headToken );
         break;
       case TokenType::TokenGroup:
-        if ( equals( headToken, "(" ) ) {
+        if ( headToken == "(" ) {
           operatorTokens.push( headToken );
         } else {
           topOperatorToken = operatorTokens.top();
 
-          while ( !equals( topOperatorToken, "(" ) ) {
+          while ( !operatorTokens.empty() && topOperatorToken != "(" ) {
+            topOperatorToken = operatorTokens.top();
             organizedTokens.push( topOperatorToken );
             operatorTokens.pop();
-            topOperatorToken = operatorTokens.top();
           }
 
           operatorTokens.pop();
@@ -155,9 +155,9 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
         }
 
         while ( !operatorTokens.empty() && !hasHigherPriority( headToken, topOperatorToken ) ) {
+          topOperatorToken = operatorTokens.top();
           organizedTokens.push( topOperatorToken );
           operatorTokens.pop();
-          topOperatorToken = operatorTokens.top();
         }
 
         operatorTokens.push( headToken );
@@ -211,7 +211,7 @@ Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
 
   Token headToken = _tokens.front();
 
-  switch ( headToken.getNodeType() ) {
+  switch ( headToken.getTokenType() ) {
     case TokenType::TokenNewline:
       _tokens.pop();
       return parseStatement( _tokens, _errorLogger );
@@ -222,7 +222,7 @@ Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
       return parseArithmetic( _tokens, _errorLogger );
       break;
     case TokenType::TokenKeyword:
-      if ( equals( headToken, "let" ) ) {
+      if ( headToken == "let" ) {
         return parseBinding( _tokens, _errorLogger );
       }
       break;

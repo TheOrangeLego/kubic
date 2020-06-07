@@ -19,9 +19,11 @@ const std::string
 
 /* compiler error messages */
 const std::string
-  ERR_UNDEFINED_VARIABLE = "undefined variable '%1%' referenced",
+  ERR_UNDEFINED_VARIABLE = "undefined variable [%1%] referenced",
   ERR_UNARY_OPERATOR_TYPE_MISMATCH = "invalid type used for operator [%1%], given [%2%] type",
-  ERR_BINARY_OPERATOR_TYPE_MISMATCH = "invalid types used for operator '%1%', given left [%2%] and right [%3%] types",
+  ERR_BINARY_OPERATOR_TYPE_MISMATCH = "invalid types used for operator [%1%], given left [%2%] and right [%3%] types",
+  ERR_BINDING_ALREADY_EXISTS = "cannot rebind variable [%1%]",
+  ERR_BINDING_BODY_TYPE_INVALID = "could not bind variable to body expression with invalid type",
   ERR_BINDING_BODY_TYPE_MISMATCH = "cannot bind variable of type [%1%] to body of type [%2%]";
 
 /* forward declaration */
@@ -29,10 +31,19 @@ class Node;
 
 class ErrorLogger {
   protected:
+    unsigned int errorCount;
+
     std::stringstream errors;
 
     void logError( boost::format& _message ) {
       errors << " -- " << boost::str( _message ) << std::endl;
+
+      errorCount++;
+    }
+
+    template<typename... Arguments>
+    void logError( boost::format& _message, std::string _string, Arguments... _arguments ) {
+      logError( _message % _string, _arguments... );
     }
 
     template<typename... Arguments>
@@ -40,14 +51,9 @@ class ErrorLogger {
       logError( _message % _token.getText(), _arguments... );
     }
 
-    template<typename... Arguments>
-    void logError( boost::format& _message, Node* _node, Arguments... _arguments ) {
-      logError( _message % NODE_TYPE_STRING.at( _node->getNodeType() ), _arguments... );
-    }
-
   public:
     ErrorLogger() {
-      /* literally does nothing */
+      errorCount = 0;
     }
 
     bool empty() {
@@ -64,11 +70,20 @@ class ErrorLogger {
       return errors.str();
     }
 
+    unsigned int getErrorCount() const {
+      return errorCount;
+    }
+
     template<typename... Arguments>
     void logError( std::string _errorMessage, Arguments... _arguments ) {
       boost::format baseMessage( _errorMessage );
       logError( baseMessage, _arguments... );
     }
+
+    /* fun times with circular dependencies going on here, logError needs Node */
+    /* but Node needs ErrorLogger, so we make it public and define it after Node */
+    template<typename... Arguments>
+    void logError( boost::format& _message, Node* _node, Arguments... _arguments );
 };
 
 #endif

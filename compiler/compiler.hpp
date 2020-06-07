@@ -5,6 +5,7 @@
 #include <queue>
 #include <string>
 
+#include "shared/environment.hpp"
 #include "shared/error.hpp"
 #include "shared/node.hpp"
 
@@ -15,23 +16,20 @@ std::string compileStatements( std::queue<Node*> _statements ) {
 
   ErrorLogger errorLogger;
 
-  unsigned int stackOffset = 0;
-
   while ( !_statements.empty() ) {
     Node* statement = _statements.front();
     _statements.pop();
     
     if ( errorLogger.empty() ) {
-      compilationResult += statement->compile( environment, errorLogger, stackOffset++ );
+      compilationResult += statement->compile( environment, errorLogger );
     }
 
     delete statement;
   }
 
   if ( !errorLogger.empty() ) {
-    std::cout << "Kubic encountered the following issues --" << std::endl;
-    std::cout << errorLogger.getErrors() << std::endl;
-
+    std::cout << "Kubic encountered the following issues --" << std::endl << errorLogger.getErrors();
+    std::cout << "Total errors encountered: " << errorLogger.getErrorCount() << std::endl;
     return "";
   }
 

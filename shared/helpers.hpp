@@ -1,12 +1,9 @@
 #ifndef _HELPERS_HPP
 #define _HELPERS_HPP
 
-#include <boost/format.hpp>
+#include <map>
 #include <set>
-#include <sstream>
 #include <string>
-
-#include "shared/token.hpp"
 
 inline bool contains( const std::string _string, const char _char ) {
   return _string.find( _char ) != std::string::npos;
@@ -17,20 +14,17 @@ inline bool contains( const std::set<T> _set, const T _element ) {
   return _set.find( _element ) != _set.end();
 }
 
-inline bool equals( const std::string _stringA, const std::string _stringB ) {
+template<class T, class K>
+inline bool contains( const std::map<T, K> _map, const T _element ) {
+  return _map.find( _element ) != _map.end();
+}
+
+bool operator == ( const std::string _stringA, const std::string _stringB ) {
   return !_stringA.compare( _stringB );
 }
 
-inline bool equals( const Token _tokenA, const Token _tokenB ) {
-  return equals( _tokenA.getText(), _tokenB.getText() );
-}
-
-inline bool equals( const Token _token, const std::string _string ) {
-  return equals( _token.getText(), _string );
-}
-
-inline bool equals( const Token _token, const TokenType _type ) {
-  return _token.getNodeType() == _type;
+bool operator != ( const std::string _stringA, const std::string _stringB ) {
+  return !( _stringA == _stringB );
 }
 
 #endif
