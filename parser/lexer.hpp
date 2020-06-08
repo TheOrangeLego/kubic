@@ -128,6 +128,32 @@ static Token tokenizeItem(
   }
 
   std::string tokenString = _input.substr( _absolutePosition - _tokenLength, _tokenLength );
+  bool (*digitChecker)(char) = []( char _digit ){ return _digit >= '0' && _digit <= '9'; };
+  unsigned int startIndex = 0;
+
+  if ( _type == TokenType::TokenConstant ) {
+    if ( tokenString.substr( 0, 2 ) == "0b" ) {
+      digitChecker = []( char _digit ){ return _digit >= '0' && _digit <= '1'; };
+      startIndex = 2;
+    } else if ( tokenString.substr( 0, 2 ) == "0o" ) {
+      digitChecker = []( char _digit ){ return _digit >= '0' && _digit <= '7'; };
+      startIndex = 2;
+    } else if ( tokenString.substr( 0, 2 ) == "0x" ) {
+      digitChecker = []( char _digit ){
+        return ( _digit >= '0' && _digit <= '9' )
+          || ( _digit >= 'a' && _digit <= 'f' )
+          || ( _digit >='A' && _digit <= 'F' );
+        };
+      startIndex = 2;
+    }
+
+    for ( ; startIndex < tokenString.length(); startIndex++ ) {
+      if ( !digitChecker( tokenString[startIndex] ) ) {
+        _type = TokenType::TokenUndefined;
+        break;
+      }
+    }
+  }
 
   if ( _type == TokenType::TokenKeyword && contains( CONSTANT_KEYWRDS, tokenString ) ) {
     _type = TokenType::TokenConstant;

@@ -27,13 +27,13 @@ std::string formatValue( const NodeType _nodeType, const Token _token ) {
       break;
     case NodeType::NodeInteger:
       if ( frontBase == "0x" ) {
-        convertedValue = std::stoi( frontBase.substr( 2 ), nullptr, 16 );
+        convertedValue = std::stoi( value.substr( 2 ), nullptr, 16 );
       } else if ( frontBase == "0o" ) {
-        convertedValue = std::stoi( frontBase.substr( 2 ), nullptr, 8 );
+        convertedValue = std::stoi( value.substr( 2 ), nullptr, 8 );
       } else if ( frontBase == "0b" ) {
-        convertedValue = std::stoi( frontBase.substr( 2 ), nullptr, 2 );
+        convertedValue = std::stoi( value.substr( 2 ), nullptr, 2 );
       } else {
-        convertedValue = std::stoi( frontBase );
+        convertedValue = std::stoi( value );
       }
 
       convertedValue = convertedValue << 1;
