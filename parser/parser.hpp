@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <stack>
+#include <vector>
 
 #include "shared/error.hpp"
 #include "shared/helpers.hpp"
@@ -137,7 +138,7 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
       case TokenType::TokenGroup:
         if ( headToken == "(" ) {
           operatorTokens.push( headToken );
-        } else {
+        } else if ( headToken == ")" ) {
           topOperatorToken = operatorTokens.top();
 
           while ( !operatorTokens.empty() && topOperatorToken != "(" ) {
@@ -147,6 +148,8 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
           }
 
           operatorTokens.pop();
+        } else {
+          _errorLogger.logError( ERR_UNEXPECTED_TOKEN, headToken );
         }
         break;
       case TokenType::TokenOperator:
@@ -204,6 +207,26 @@ Node* parseBinding( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   return new BindingNode( variable, typeBinded, bindingExpression );
 }
 
+Node* parseMultiStatements( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
+  Token headToken;
+  _tokens.pop();
+
+  std::vector<Node*> statements;
+
+  while ( !_tokens.empty() ) {
+    headToken = _tokens.front();
+    if ( headToken != "}" ) {
+      statements.push_back( parseStatement( _tokens, _errorLogger ) );
+    } else {
+      _tokens.pop();
+      return new MultiStatementNode( statements );
+    }
+  }
+
+  _errorLogger.logError( ERR_UNEXPECTED_TERMINATION, headToken );
+  return nullptr;
+}
+
 Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   if ( _tokens.empty() ) {
     return nullptr;
@@ -218,8 +241,17 @@ Node* parseStatement( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
       break;
     case TokenType::TokenConstant:
     case TokenType::TokenVariable:
-    case TokenType::TokenGroup:
       return parseArithmetic( _tokens, _errorLogger );
+      break;
+    case TokenType::TokenGroup:
+      if ( headToken == "(" ) {
+        return parseArithmetic( _tokens, _errorLogger );
+      } else if ( headToken == "{" ) {
+        return parseMultiStatements( _tokens, _errorLogger );
+      } else {
+        _errorLogger.logError( ERR_UNEXPECTED_TOKEN, headToken );
+        _tokens.pop();
+      }
       break;
     case TokenType::TokenKeyword:
       if ( headToken == "let" ) {

@@ -14,7 +14,7 @@ const std::string NEWLINE_CHARS = "\n\r";
 
 const std::string OPERATOR_CHARS = "+-*/";
 
-const std::string GROUP_CHARS = "()";
+const std::string GROUP_CHARS = "(){}";
 
 const std::set<std::string> CONSTANT_KEYWRDS {
   "false",

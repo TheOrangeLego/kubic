@@ -68,7 +68,7 @@ class Node {
       if ( representation ) delete representation;
     }
 
-    virtual NodeType getNodeType() const {
+    NodeType getNodeType() const {
       return nodeType;
     }
 
@@ -248,6 +248,33 @@ class BinaryOperatorNode : public Node {
       }
 
       *representation << operateReg( binaryOperator, Register::RAX, regOffset( Register::RSI, currentOffset ) );
+
+      return representation->str();
+    }
+};
+
+class MultiStatementNode : public Node {
+  protected:
+    std::vector<Node*> statements;
+
+  public:
+    MultiStatementNode( std::vector<Node*> _statements ) : statements( _statements ) {
+    };
+
+    ~MultiStatementNode() {
+      for ( Node* node : statements ) {
+        delete node;
+      }
+    }
+
+    std::string compile( Environment& _environment, ErrorLogger& _errorLogger ) {
+      _environment.addFrame();
+
+      for ( Node* node : statements ) {
+        *representation << node->compile( _environment, _errorLogger );
+      }
+
+      _environment.removeFrame();
 
       return representation->str();
     }

@@ -5,10 +5,6 @@ const unsigned long long int TRUE  = 0xFFFFFFFFFFFFFFFF;
 
 extern "C" unsigned long long int kubic_main( void );
 
-void error( long long int _errorCode ) {
-  exit( 1 );
-}
-
 std::string unformatValue( unsigned long long int _value ) {
   if ( _value == FALSE ) {
     return "false";
@@ -20,6 +16,15 @@ std::string unformatValue( unsigned long long int _value ) {
 
   return "";
 }
+
+void error( unsigned long long int _errorCode ) {
+  exit( 1 );
+}
+
+void print( unsigned long long int _value ) {
+  std::cout << unformatValue( _value ) << std::endl;
+}
+
 int main( void ) {
   unsigned long long int kubicResult = kubic_main();
 
