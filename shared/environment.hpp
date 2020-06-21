@@ -1,61 +1,84 @@
 #ifndef _ENVIRONMENT_HPP
 #define _ENVIRONMENT_HPP
 
-#include <map>
 #include <stack>
-#include <set>
+#include <vector>
 
 #include "shared/helpers.hpp"
 #include "shared/token.hpp"
 #include "shared/types.hpp"
 
-typedef std::set<Token> FrameVariables;
-typedef std::map<Token, unsigned int> FrameOffsets;
-typedef std::map<Token, NodeType> FrameTypes;
+typedef std::pair<Token, NodeType> Binding;
 
 class Environment {
   private:
-    std::stack<FrameVariables> variables;
-    std::stack<FrameOffsets> offsets;
-    std::stack<FrameTypes> types;
+    unsigned int currentVariableCount;
+    unsigned int lifetimeVariableCount;
+    std::stack<unsigned int> frameVariableCounts;
+    std::vector<Binding> bindings;
 
   public:
     Environment() {
-      addFrame();
+      currentVariableCount = 0;
+      lifetimeVariableCount = 0;
     }
 
     unsigned int currentOffset() const {
-      return variables.top().size();
+      return lifetimeVariableCount;
     }
 
     bool bindingExists( const Token _token ) const {
-      return contains( variables.top(), _token );
+      for ( Binding binding : bindings ) {
+        if ( binding.first == _token ) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     unsigned int getOffset( const Token _token ) const {
-      return offsets.top().at( _token );
+      unsigned index = 0;
+      for ( Binding binding : bindings ) {
+        if ( binding.first == _token ) {
+          return index;
+        }
+
+        index++;
+      }
+
+      return 0;
     }
 
     NodeType getType( const Token _token ) const {
-      return types.top().at( _token );
+      for ( Binding binding : bindings ) {
+        if ( binding.first == _token ) {
+          return binding.second;
+        }
+      }
+
+      return NodeType::NodeUndefined;
     }
 
     void addFrame() {
-      variables.push( FrameVariables() );
-      offsets.push( FrameOffsets() );
-      types.push( FrameTypes() );
+      frameVariableCounts.push( currentVariableCount );
+      currentVariableCount = 0;
     }
 
     void removeFrame() {
-      variables.pop();
-      offsets.pop();
-      types.pop();
+      for ( unsigned int count = 0; count < currentVariableCount; count++ ) {
+        bindings.pop_back();
+      }
+
+      lifetimeVariableCount -= currentVariableCount;
+      currentVariableCount = frameVariableCounts.top();
+      frameVariableCounts.pop();
     }
 
     void insertBinding( const Token _token, NodeType _type ) {
-      offsets.top().insert( std::pair<Token, unsigned int>( _token, currentOffset() ) );
-      types.top().insert( std::pair<Token, NodeType>( _token, _type ) );
-      variables.top().insert( _token );
+      bindings.push_back( Binding( _token, _type ) );
+      currentVariableCount++;
+      lifetimeVariableCount++;
     }
 };
 
