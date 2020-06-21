@@ -129,7 +129,6 @@ class VariableNode : public Node {
 
     ~VariableNode() {}
 
-    #pragma GCC diagnostic ignored "-Wunused-parameter"
     std::string compile( Environment& _environment, ErrorLogger& _errorLogger ) {
       if ( !_environment.bindingExists( variable ) ) {
         _errorLogger.logError( ERR_UNDEFINED_VARIABLE, variable );

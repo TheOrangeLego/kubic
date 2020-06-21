@@ -13,7 +13,7 @@
 /* parser error messages */
 const std::string
   ERR_UNEXPECTED_TOKEN = "unexpected token [%1%]",
-  ERR_UNEXPECTED_TERMINATION = "unexpected end of statement after [%2%]",
+  ERR_UNEXPECTED_TERMINATION = "unexpected end of statement after [%1%]",
   ERR_EXPECTED_TOKEN = "unexpected token [%1%], was expecting token [%2%]",
   ERR_EXPECTED_TERMINATION = "expected end of statement after token [%1%]";
 
@@ -35,6 +35,14 @@ class ErrorLogger {
 
     std::stringstream errors;
 
+    std::string escapeString( const std::string _string ) {
+      if ( _string == "\n" ) {
+        return "{newline}";
+      } else {
+        return _string;
+      }
+    }
+
     void logError( boost::format& _message ) {
       errors << " -- " << boost::str( _message ) << std::endl;
 
@@ -43,12 +51,12 @@ class ErrorLogger {
 
     template<typename... Arguments>
     void logError( boost::format& _message, std::string _string, Arguments... _arguments ) {
-      logError( _message % _string, _arguments... );
+      logError( _message % escapeString( _string ), _arguments... );
     }
 
     template<typename... Arguments>
     void logError( boost::format& _message, Token _token, Arguments... _arguments ) {
-      logError( _message % _token.getText(), _arguments... );
+      logError( _message % escapeString( _token.getText() ), _arguments... );
     }
 
   public:
