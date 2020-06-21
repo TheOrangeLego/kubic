@@ -121,16 +121,12 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
   std::stack<Token> organizedTokens;
   Token headToken;
   Token topOperatorToken;
-  bool stopParsing = false;
+  bool continueParsing = true;
 
-  while ( !stopParsing && !_tokens.empty() ) {
+  while ( continueParsing && !_tokens.empty() ) {
     headToken = _tokens.front();
-    _tokens.pop();
 
     switch ( headToken.getTokenType() ) {
-      case TokenType::TokenNewline:
-        stopParsing = true;
-        break;
       case TokenType::TokenConstant:
       case TokenType::TokenVariable:
         organizedTokens.push( headToken );
@@ -149,7 +145,7 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
 
           operatorTokens.pop();
         } else {
-          _errorLogger.logError( ERR_UNEXPECTED_TOKEN, headToken );
+          continueParsing = false;
         }
         break;
       case TokenType::TokenOperator:
@@ -166,8 +162,11 @@ Node* parseArithmetic( std::queue<Token>& _tokens, ErrorLogger& _errorLogger ) {
         operatorTokens.push( headToken );
         break;
       default:
+        continueParsing = false;
         break;
     }
+
+    if ( continueParsing ) _tokens.pop();
   }
 
   while ( !operatorTokens.empty() ) {
@@ -215,7 +214,9 @@ Node* parseMultiStatements( std::queue<Token>& _tokens, ErrorLogger& _errorLogge
 
   while ( !_tokens.empty() ) {
     headToken = _tokens.front();
-    if ( headToken != "}" ) {
+    if ( headToken == TokenType::TokenNewline ) {
+      _tokens.pop();
+    } else if ( headToken != "}" ) {
       statements.push_back( parseStatement( _tokens, _errorLogger ) );
     } else {
       _tokens.pop();

@@ -120,8 +120,14 @@ static Token tokenizeItem(
     );
   }
   
-  if ( _type != TokenType::TokenOperator && _absolutePosition < _inputLength &&
-       !isWhitespace( currentChar ) && !isNewline( currentChar ) && !isOperator( currentChar ) ) {
+  if (
+      _type != TokenType::TokenOperator
+      && _absolutePosition < _inputLength
+      && !isWhitespace( currentChar )
+      && !isNewline( currentChar )
+      && !isOperator( currentChar )
+      && !isGroup( currentChar )
+  ) {
     return tokenizeItem(
       _input, _position, _absolutePosition, _tokenLength, _inputLength, TokenType::TokenUndefined
     );
