@@ -1,85 +1,65 @@
 #ifndef _ENVIRONMENT_HPP
 #define _ENVIRONMENT_HPP
 
-#include <stack>
+#include <boost/range/adaptor/reversed.hpp>
+#include <map>
+#include <string>
+#include <tuple>
 #include <vector>
 
-#include "shared/helpers.hpp"
-#include "shared/token.hpp"
 #include "shared/types.hpp"
 
-typedef std::pair<Token, NodeType> Binding;
+typedef std::tuple<int, ValueType> VariableInfo;
 
-class Environment {
-  private:
-    unsigned int currentVariableCount;
-    unsigned int lifetimeVariableCount;
-    std::stack<unsigned int> frameVariableCounts;
-    std::vector<Binding> bindings;
+static std::vector<std::map<std::string, VariableInfo>> bindings;
 
-  public:
-    Environment() {
-      currentVariableCount = 0;
-      lifetimeVariableCount = 0;
+static std::map<std::string, VariableInfo> currentBindings;
+
+static int baseOffset = 2;
+
+void addVariable( const std::string _variable, const ValueType _valueType ) {
+  currentBindings.insert( { _variable, VariableInfo( baseOffset++, _valueType ) } );
+}
+
+VariableInfo getVariable( const std::string _variable ) {
+  if ( currentBindings.find( _variable ) != currentBindings.end() ) {
+    return currentBindings.at( _variable );
+  }
+
+  for ( std::map<std::string, VariableInfo> binding : boost::adaptors::reverse( bindings ) ) {
+    if ( binding.find( _variable ) != binding.end() ) {
+      return binding.at( _variable );
     }
+  }
 
-    unsigned int currentOffset() const {
-      return lifetimeVariableCount;
-    }
+  return VariableInfo( 0, ValueType::ValueVoid );;
+}
 
-    bool bindingExists( const Token _token ) const {
-      for ( Binding binding : bindings ) {
-        if ( binding.first == _token ) {
-          return true;
-        }
-      }
+int getVariableOffset( const std::string _variable ) {
+  return std::get<0>( getVariable( _variable ) );
+}
 
-      return false;
-    }
+ValueType getVariableValueType( const std::string _variable ) {
+  return std::get<1>( getVariable( _variable ) );
+}
 
-    unsigned int getOffset( const Token _token ) const {
-      unsigned index = 0;
-      for ( Binding binding : bindings ) {
-        if ( binding.first == _token ) {
-          return index;
-        }
+void pushStack( std::vector<std::tuple<std::string, ValueType>> _parameters ) {
+  int parameterOffset = -3;
+  baseOffset = 2;
+  bindings.push_back( currentBindings );
+  currentBindings.clear();
 
-        index++;
-      }
+  for ( std::tuple<std::string, ValueType> parameter : _parameters ) {
+    std::string identifier = std::get<0>( parameter );
+    ValueType valueType = std::get<1>( parameter );
+    currentBindings.insert( { identifier, VariableInfo( parameterOffset--, valueType ) } );
+  }
+}
 
-      return 0;
-    }
-
-    NodeType getType( const Token _token ) const {
-      for ( Binding binding : bindings ) {
-        if ( binding.first == _token ) {
-          return binding.second;
-        }
-      }
-
-      return NodeType::NodeUndefined;
-    }
-
-    void addFrame() {
-      frameVariableCounts.push( currentVariableCount );
-      currentVariableCount = 0;
-    }
-
-    void removeFrame() {
-      for ( unsigned int count = 0; count < currentVariableCount; count++ ) {
-        bindings.pop_back();
-      }
-
-      lifetimeVariableCount -= currentVariableCount;
-      currentVariableCount = frameVariableCounts.top();
-      frameVariableCounts.pop();
-    }
-
-    void insertBinding( const Token _token, NodeType _type ) {
-      bindings.push_back( Binding( _token, _type ) );
-      currentVariableCount++;
-      lifetimeVariableCount++;
-    }
-};
+void popStack() {
+  currentBindings = bindings.back();
+  bindings.pop_back();
+  baseOffset = currentBindings.size();
+}
 
 #endif

@@ -1,49 +1,68 @@
 #ifndef _TYPES_HPP
 #define _TYPES_HPP
 
+#include <map>
 #include <string>
-
-#include "shared/helpers.hpp"
 
 enum TokenType {
   TokenUndefined,
+  TokenComma,
   TokenNewline,
+  TokenBoolean,
   TokenConstant,
   TokenVariable,
-  TokenGroup,
   TokenKeyword,
   TokenOperator,
+  TokenArithmeticGrouper,
+  TokenStatementGrouper,
 };
 
 enum NodeType {
   NodeUndefined,
   NodeBoolean,
-  NodeInteger,
-  NodeString,
+  NodeConstant,
   NodeVariable,
+  NodeBinding,
+  NodeUnaryOperator,
+  NodeBinaryOperator,
+  NodeMultiStatement,
+  NodeConditional,
 };
 
-std::string typeToString( const NodeType _nodeType ) {
-  if ( _nodeType == NodeType::NodeBoolean ) {
-    return "Boolean";
-  } else if ( _nodeType == NodeType::NodeInteger ) {
-    return "Integer";
-  } else if ( _nodeType == NodeType::NodeString ) {
-    return "String";
-  } else {
-    return "Undefined";
+enum ValueType {
+  ValueUndefined,
+  ValueVoid,
+  ValueBoolean,
+  ValueConstant,
+};
+
+std::map<std::string, ValueType> VALUE_TYPE_NAME = {
+  { "boolean", ValueType::ValueBoolean },
+  { "number", ValueType::ValueConstant },
+};
+
+ValueType translateToValueType( const std::string _type ) {
+  if ( VALUE_TYPE_NAME.find( _type ) == VALUE_TYPE_NAME.end() ) {
+    return ValueType::ValueUndefined;
   }
+
+  return VALUE_TYPE_NAME.at( _type );
 }
 
-NodeType stringToType( const std::string _string ) {
-  if ( _string == "Boolean" ) {
-    return NodeType::NodeBoolean;
-  } else if ( _string == "Integer" ) {
-    return NodeType::NodeInteger;
-  } else if ( _string == "String" ) {
-    return NodeType::NodeString;
-  } else {
-    return NodeType::NodeUndefined;
+std::string translateFromValueType( const ValueType _type ) {
+  switch ( _type ) {
+    case ValueVoid:
+      return "void";
+      break;
+    case ValueBoolean:
+      return "boolean";
+      break;
+    case ValueConstant:
+      return "number";
+      break;
+    default:
+      return "undefined";
+      break;
   }
 }
 

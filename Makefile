@@ -25,8 +25,8 @@ SHARED_HEADERS   = shared/*.hpp
 # kubic compiler and driver source and generated objects
 KUBIC_COMPILER_SOURCE = kubicc.cpp
 KUBIC_COMPILER_OBJECT = kubicc.o
-KUBIC_DRIVER_SOURCE   = driver.cpp
-KUBIC_DRIVER_OBJECT   = driver.o
+KUBIC_DRIVER_SOURCE   = kubic.cpp
+KUBIC_DRIVER_OBJECT   = kubic.o
 
 # generated kubic asm and object files
 KUBIC_GENERATED_ASM    = main.ka
