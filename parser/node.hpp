@@ -219,4 +219,32 @@ class ConditionalNode : public Node {
     }
 };
 
+class FunctionCallNode : public Node {
+  private:
+    std::string name;
+    std::vector<Node*> arguments;
+
+  public:
+    FunctionCallNode( const Position _position, const std::string _name, std::vector<Node*> _arguments )
+      : Node( _name, NodeType::NodeFunctionCall, _position ), name( _name ), arguments( _arguments ) {}
+    
+    ~FunctionCallNode() {
+      for ( Node* argument : arguments ) {
+        delete argument;
+      }
+    }
+    
+    std::string getName() const {
+      return name;
+    }
+
+    std::vector<Node*> getArguments() const {
+      return arguments;
+    }
+
+    int getArgumentCount() const {
+      return arguments.size();
+    }
+};
+
 #endif

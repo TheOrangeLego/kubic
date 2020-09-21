@@ -15,6 +15,7 @@ const std::map<std::string, unsigned int> OPERATOR_PRIORITY = {
   { "(", 0 }, { ")", 0 },
   { "+", 1 }, { "-", 1 },
   { "*", 2 }, { "/", 2 },
+  { "<", 9 }, { ">", 9 }, { ">=", 9 }, { "<=", 9 },
 };
 
 bool higherPriority( const Token* _tokenA, const Token* _tokenB ) {
@@ -22,6 +23,59 @@ bool higherPriority( const Token* _tokenA, const Token* _tokenB ) {
 }
 
 Node* nodeify( std::queue<Token*>& _tokens );
+
+std::vector<Node*> nodeifyCommaSeparatedExpressions( std::queue<Token*>& _tokens ) {
+  std::vector<Node*> expressions;
+  bool moreExpressions = true;
+
+  do {
+    expressions.push_back( nodeify( _tokens ) );
+
+    if ( _tokens.empty() || _tokens.front()->getText() != "," ) {
+      moreExpressions = false;
+    } else {
+      _tokens.pop();
+
+      while ( _tokens.front()->getText() == "\n" ) {
+        _tokens.pop();
+      }
+    }
+  } while ( moreExpressions );
+
+  return expressions;
+}
+
+Node* nodeifyFunctionCall( std::queue<Token*>& _tokens, Token* _token ) {
+  Node* node = nullptr;
+  std::vector<Node*> arguments;
+
+  Token* openArgument = _tokens.front();
+  _tokens.pop();
+
+  int innerExpressionCount = 0;
+
+  std::queue<Token*> argumentTokens;
+
+  while ( !_tokens.empty() && ( _tokens.front()->getText() != ")" || innerExpressionCount ) ) {
+    if ( _tokens.front()->getText() == "(" ) {
+      innerExpressionCount++;
+    } else if ( _tokens.front()->getText() == ")" ) {
+      innerExpressionCount--;
+    }
+
+    argumentTokens.push( _tokens.front() );
+    _tokens.pop();
+  }
+
+  arguments = nodeifyCommaSeparatedExpressions( argumentTokens );
+
+  Token* closeArgument = _tokens.front();
+  _tokens.pop();
+
+  node = new FunctionCallNode( _token->getPosition(), _token->getText(), arguments );
+
+  return node;
+}
 
 Node* nodeifyStatements( std::queue<Token*>& _tokens ) {
   std::vector<Node*> statements;
@@ -63,97 +117,100 @@ Node* nodeifyGroupedStatements( std::queue<Token*>& _tokens ) {
   return statements;
 }
 
-Node* nodeifyArithmetic( std::stack<Token*>& _tokens ) {
-  if ( _tokens.empty() ) {
-    return nullptr;
-  }
-
-  Node* node = nullptr;
-  Token* top = _tokens.top();
-  _tokens.pop();
-
-  switch ( top->getType() ) {
-    case TokenType::TokenBoolean:
-      node = new BooleanNode( top->getText(), top->getPosition() );
-      break;
-    case TokenType::TokenConstant:
-      node = new ConstantNode( top->getText(), top->getPosition() );
-      break;
-    case TokenType::TokenVariable:
-      node = new VariableNode( top->getText(), top->getPosition() );
-      break;
-    case TokenType::TokenOperator: {
-      Node* lNode = nodeifyArithmetic( _tokens );
-      Node* rNode = nodeifyArithmetic( _tokens );
-      node = new BinaryOperatorNode( top->getText(), top->getPosition(), lNode, rNode );
-      break;
-    }
-    default:
-      break;
-  }
-
-  return node;
-}
-
 Node* nodeifyArithmetic( std::queue<Token*>& _tokens ) {
-  std::stack<Token*> operatorTokens;
-  std::stack<Token*> organizedTokens;
+  bool continueParsing = true;
+  std::stack<Node*> operands;
+  std::stack<Token*> operators;
 
-  Token* topToken = nullptr;
-  Token* headToken = nullptr;
+  Token* top = _tokens.front();
 
-  while ( !_tokens.empty() && contains( ARITHMETIC_TYPES, _tokens.front()->getType() ) ) {
-    headToken = _tokens.front();
+  while ( continueParsing && top ) {
+    if ( top->getType() == TokenType::TokenBoolean ) {
+      operands.push( new BooleanNode( top->getText(), top->getPosition() ) );
+      _tokens.pop();
+    } else if ( top->getType() == TokenType::TokenConstant ) {
+      operands.push( new ConstantNode( top->getText(), top->getPosition() ) );
+      _tokens.pop();
+    } else if ( top->getType() == TokenType::TokenVariable ) {
+      Token* variable = top;
+      _tokens.pop();
 
-    switch ( headToken->getType() ) {
-      case TokenType::TokenBoolean:
-      case TokenType::TokenConstant:
-      case TokenType::TokenVariable:
-        organizedTokens.push( headToken );
-        break;
-      case TokenType::TokenOperator:
-        if ( !operatorTokens.empty() ) {
-          topToken = operatorTokens.top();
+      if ( contains( functions, variable->getText() ) &&  _tokens.front()->getText() == "(" ) {
+        operands.push( nodeifyFunctionCall( _tokens, variable ) );
+      } else {
+        operands.push( new VariableNode( variable->getText(), variable->getPosition() ) );
+        _tokens.pop();
+      }
+    } else if ( top->getType() == TokenType::TokenOperator ) {
+      if ( !operators.empty() ) {
+        Token* topOperator = operators.top();
 
-          while ( topToken && !higherPriority( headToken, topToken ) ) {
-            organizedTokens.push( topToken );
-            operatorTokens.pop();
-            topToken = operatorTokens.empty() ? nullptr : operatorTokens.top();
-          }
-
-          operatorTokens.push( headToken );
-        } else {
-          operatorTokens.push( headToken );
+        while ( topOperator && !higherPriority( top, topOperator ) ) {
+          Node* rOperand = operands.top();
+          operands.pop();
+          Node* lOperand = operands.top();
+          operands.pop();
+          Node* newOperand = new BinaryOperatorNode(
+            topOperator->getText(), topOperator->getPosition(), lOperand, rOperand
+          );
+          operands.push( newOperand );
+          operators.pop();
+          topOperator = operators.empty() ? nullptr : operators.top();
         }
-        break;
-      case TokenType::TokenArithmeticGrouper:
-        if ( headToken->getText() == "(" ) {
-          operatorTokens.push( headToken );
-        } else {
-          topToken = operatorTokens.top();
+      }
 
-          while ( topToken && topToken->getText() != "(" ) {
-            organizedTokens.push( topToken );
-            operatorTokens.pop();
-            topToken = operatorTokens.empty() ? nullptr : operatorTokens.top();
-          }
+      operators.push( top );
+      _tokens.pop();
+    } else if ( top->getType() == TokenType::TokenArithmeticGrouper ) {
+      if ( top->getText() == "(" ) {
+        operators.push( top );
+      } else {
+        Token* topOperator = operators.top();
 
-          operatorTokens.pop();
+        while ( topOperator && topOperator->getText() != "(" ) {
+          Node* rOperand = operands.top();
+          operands.pop();
+          Node* lOperand = operands.top();
+          operands.pop();
+          Node* newOperand = new BinaryOperatorNode(
+            topOperator->getText(), topOperator->getPosition(), lOperand, rOperand
+          );
+          operands.push( newOperand );
+          operators.pop();
+          topOperator = operators.empty() ? nullptr : operators.top();
         }
-        break;
-      default:
-        break;
+
+        operators.pop();
+      }
+
+      _tokens.pop();
+    } else {
+      continueParsing = false;
     }
 
-    _tokens.pop();
+    top = _tokens.empty() ? nullptr : _tokens.front();
   }
 
-  while ( !operatorTokens.empty() ) {
-    organizedTokens.push( operatorTokens.top() );
-    operatorTokens.pop();
+  while ( !operators.empty() ) {
+    Token* topOperator = operators.top();
+    operators.pop();
+
+    Node* rOperand = operands.top();
+    operands.pop();
+    Node* lOperand = operands.top();
+    operands.pop();
+    Node* newOperand = new BinaryOperatorNode( topOperator->getText(), topOperator->getPosition(), lOperand, rOperand );
+    operands.push( newOperand );
   }
 
-  return nodeifyArithmetic( organizedTokens );
+  Node* topOperand = operands.top();
+  operands.pop();
+
+  if ( !operands.empty() ) {
+    /* TODO -- error :: should not have remaining nodes */
+  }
+
+  return topOperand;
 }
 
 Node* nodeifyBinding( std::queue<Token*>& _tokens ) {

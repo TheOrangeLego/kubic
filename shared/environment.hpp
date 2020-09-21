@@ -8,12 +8,17 @@
 #include <vector>
 
 #include "shared/types.hpp"
+#include "shared/utils.hpp"
 
 typedef std::tuple<int, ValueType> VariableInfo;
 
 static std::vector<std::map<std::string, VariableInfo>> bindings;
 
 static std::map<std::string, VariableInfo> currentBindings;
+
+static std::map<std::string, int> functions = {
+  { "print", 1 },
+};
 
 static int baseOffset = 2;
 
@@ -60,6 +65,14 @@ void popStack() {
   currentBindings = bindings.back();
   bindings.pop_back();
   baseOffset = currentBindings.size();
+}
+
+void addFunction( const std::string _name, const int _argumentCount ) {
+  functions.insert( { _name, _argumentCount } );
+}
+
+int getFunction( const std::string _name ) {
+  return mapping( functions, _name, -1 );
 }
 
 #endif

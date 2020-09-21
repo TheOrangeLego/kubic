@@ -78,6 +78,10 @@ std::string label( const std::string _labelPrefix, const unsigned int _labelCoun
   return ( boost::format( "%1%_%2%:\n" ) % _labelPrefix % _labelCounter ).str();
 }
 
+std::string call( const std::string _function ) {
+  return ( boost::format( "  call %1%\n" ) % _function ).str();
+}
+
 std::string formatValue( const Node* _node ) {
   int convertedValue;
   std::string value = _node->getText();

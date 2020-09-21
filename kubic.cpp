@@ -1,31 +1,36 @@
+#include <cstdint>
+#include <inttypes.h>
 #include <iostream>
+#include <sstream>
 
-extern "C" unsigned long long int kubic_main( void );
+extern "C" uint64_t kubic_main( void );
 
-std::string unformatValue( const unsigned long long int _value ) {
+extern "C" void print( const uint64_t );
+
+std::string unformatValue( const uint64_t _value ) {
   if ( _value == 0x7FFFFFFFFFFFFFFF ) {
     return "false";
   } else if ( _value == 0xFFFFFFFFFFFFFFFF ) {
     return "true";
   } else if ( ( _value & 0x1 ) == 0x0 ) {
-    return std::to_string( _value >> 1 );
+    std::ostringstream value;
+    value << ( _value >> 1 );
+    return value.str();
   } else {
     return "";
   }
 }
 
-void error( unsigned long long int _errorCode ) {
+void error( const uint64_t _errorCode ) {
   exit( 1 );
 }
 
-void print( unsigned long long int _value ) {
+void print( const uint64_t _value ) {
   std::cout << unformatValue( _value ) << std::endl;
 }
 
 int main( int argc, char* argv[] ) {
-  unsigned long long int kubicResult = kubic_main();
-
-  std::cout << unformatValue( kubicResult ) << std::endl;
+  uint64_t kubicResult = kubic_main();
 
   return 0;
 }

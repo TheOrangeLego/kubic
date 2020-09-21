@@ -27,6 +27,7 @@ enum NodeType {
   NodeBinaryOperator,
   NodeMultiStatement,
   NodeConditional,
+  NodeFunctionCall,
 };
 
 enum ValueType {

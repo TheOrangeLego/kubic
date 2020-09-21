@@ -28,7 +28,7 @@ const std::set<char> OPERATORS = {
   ':', '=',
 
   /* boolean operators */
-  '!',
+  '!', '>', '<',
 
   /* arithmetic operators */
   '+', '-', '*', '/',

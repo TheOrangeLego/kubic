@@ -1,12 +1,18 @@
 #ifndef _COMPILER_HPP
 #define _COMPILER_HPP
 
+#include <boost/range/adaptor/reversed.hpp>
 #include <fstream>
+#include <set>
 #include <string>
 
 #include "compiler/assembly.hpp"
 #include "parser/node.hpp"
 #include "shared/errors.hpp"
+
+std::set<std::string> EXTERNAL_FUNCTIONS = {
+  "print",
+};
 
 static unsigned int labelCounter = 0;
 
@@ -41,12 +47,14 @@ std::string compile( Node* _node ) {
     representation << insn( "mov", Register::RAX, regOffset( Register::RBP, getVariableOffset( _node->getText() ) ) );
   } else if ( nodeTypeMatch( _node, NodeType::NodeBinding ) ) {
     BindingNode* node = (BindingNode*) _node;
+
     representation << compile( node->getBindingExpression() );
     representation << pushInsn( Register::RAX );
   } else if ( nodeTypeMatch( _node, NodeType::NodeUnaryOperator ) ) {
     /* TODO -- implement once more operators have been decided */
   } else if ( nodeTypeMatch( _node, NodeType::NodeBinaryOperator ) ) {
     BinaryOperatorNode* node = (BinaryOperatorNode*) _node;
+
     representation << compile( node->getRightOperand() );
     representation << pushInsn( Register::RAX );
     representation << compile( node->getLeftOperand() );
@@ -54,16 +62,18 @@ std::string compile( Node* _node ) {
     representation << insn( binaryOperator( _node ), Register::RAX, Register::RBX );
 
     if ( node->getText() == "*" ) {
-      representation << insn( "sar", Register::RAX, "2" );
+      representation << insn( "sar", Register::RAX, "1" );
     }
   } else if ( nodeTypeMatch( _node, NodeType::NodeMultiStatement ) ) {
     MultiStatementNode* node = (MultiStatementNode*) _node;
+
     for ( Node* statement : node->getStatements() ) {
       representation << compile( statement );
     }
   } else if ( nodeTypeMatch( _node, NodeType::NodeConditional ) ) {
     ConditionalNode* node = (ConditionalNode*) _node;
     unsigned int currentCounter = labelCounter++;
+
     representation << compile( node->getConditional() );
     representation << jumpNotTrue( "else_body", currentCounter );
     representation << compile( node->getUpperBody() );
@@ -71,6 +81,18 @@ std::string compile( Node* _node ) {
     representation << label( "else_body", currentCounter );
     representation << compile( node->getLowerBody() );
     representation << label( "end_if_else", currentCounter );
+  } else if ( nodeTypeMatch( _node, NodeType::NodeFunctionCall ) ) {
+    FunctionCallNode* node = (FunctionCallNode*) _node;
+    std::vector<Node*> arguments = node->getArguments();
+
+    for ( Node* argument : boost::adaptors::reverse( arguments ) ) {
+      representation << compile( argument );
+      /* TODO -- order of function arguments RDI, RSI, RDX, RCX, R8, R9 */
+      representation << insn( "mov", Register::RDI, Register::RAX );
+    }
+
+    representation << call( node->getName() );
+    /* TODO -- only move RBP if using stack */
   } else {
     return "";
   }
@@ -88,7 +110,14 @@ void compile( Node* _node, const std::string _filename ) {
   if ( !emptyErrorsLog() ) {
     printErrors();
   } else {
-    asmFile << "section .text" << std::endl
+    asmFile << "section .data" << std::endl;
+
+    for ( std::string function : EXTERNAL_FUNCTIONS ) {
+      asmFile << "  extern " << function << std::endl;
+    }
+
+    asmFile << std::endl
+            << "section .text" << std::endl
             << "  global kubic_main" << std::endl
             << std::endl
             << "kubic_main:" << std::endl
