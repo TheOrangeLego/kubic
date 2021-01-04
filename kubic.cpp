@@ -22,7 +22,7 @@ std::string unformatValue( const uint64_t _value ) {
 }
 
 void error( const uint64_t _errorCode ) {
-  exit( 1 );
+  exit( _errorCode );
 }
 
 void print( const uint64_t _value ) {
@@ -31,6 +31,10 @@ void print( const uint64_t _value ) {
 
 int main( int argc, char* argv[] ) {
   uint64_t kubicResult = kubic_main();
+
+  if ( kubicResult ) {
+    /* TODO -- this return value could signal something  */
+  }
 
   return 0;
 }

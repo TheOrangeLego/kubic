@@ -20,7 +20,7 @@ static std::map<std::string, int> functions = {
   { "print", 1 },
 };
 
-static int baseOffset = 2;
+static int baseOffset = 6;
 
 void addVariable( const std::string _variable, const ValueType _valueType ) {
   currentBindings.insert( { _variable, VariableInfo( baseOffset++, _valueType ) } );
@@ -50,7 +50,7 @@ ValueType getVariableValueType( const std::string _variable ) {
 
 void pushStack( std::vector<std::tuple<std::string, ValueType>> _parameters ) {
   int parameterOffset = -3;
-  baseOffset = 2;
+  baseOffset = 6;
   bindings.push_back( currentBindings );
   currentBindings.clear();
 

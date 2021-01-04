@@ -25,13 +25,14 @@ const std::vector<char> NUMERIC_DIGITS = {
 };
 
 const std::set<char> OPERATORS = {
-  ':', '=',
+  ':', '\\',
 
-  /* boolean operators */
-  '!', '>', '<',
+  '&', '|', '^', '!',
 
-  /* arithmetic operators */
+  '=', '>', '<', '%',
+
   '+', '-', '*', '/',
+
 };
 
 const std::set<char> ARITHMETIC_GROUPERS = {
@@ -44,7 +45,7 @@ const std::set<char> STATEMENT_GROUPERS = {
 
 const std::set<std::string> KEYWORDS = {
   /* value type keywords */
-  "integer",
+  "boolean", "integer",
 
   /* operator keywords */
   "define",

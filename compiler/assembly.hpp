@@ -28,6 +28,13 @@ const std::map<Register, std::string> REGISTER_MAP = {
   { Register::RSP, "rsp" }, { Register::RBP, "rbp" },
 };
 
+const std::map<std::string, std::string> BINARY_OPERATOR_ASM = {
+  { "+", "add" }, { "-", "sub" }, { "*", "imul" }, { "/", "idiv" },
+  { "<", "jl" }, { ">", "jg" }, { "<=", "jle" }, { ">=", "jge" },
+  { "&&", "and" }, { "||", "or" }, { "^", "xor" }, { "!", "not" },
+  { "==", "je" }, { "!=", "jne" },
+};
+
 std::string reg( const Register _register ) {
   return REGISTER_MAP.at( _register );
 }
@@ -64,21 +71,15 @@ std::string popInsn( const Register _register ) {
   return ( boost::format( "  pop %1%\n" ) % reg( _register ) ).str(); 
 }
 
-std::string jumpNotTrue( const std::string _labelPrefix, const unsigned int _labelCounter ) {
-  return (
-    boost::format( "  cmp %1%, %2%\n  jne %3%_%4%\n" ) % reg( Register::RAX ) % ASM_TRUE % _labelPrefix % _labelCounter
-  ).str();
-}
-
-std::string jump( const std::string _labelPrefix, const unsigned int _labelCounter ) {
-  return ( boost::format( "  jmp %1%_%2%\n" ) % _labelPrefix % _labelCounter ).str();
+std::string jumpInsn(  const std::string _condition, const std::string _labelPrefix, const unsigned int _labelCounter ) {
+  return ( boost::format( "  %1% %2%_%3%\n" ) % _condition %  _labelPrefix % _labelCounter ).str();
 }
 
 std::string label( const std::string _labelPrefix, const unsigned int _labelCounter ) {
   return ( boost::format( "%1%_%2%:\n" ) % _labelPrefix % _labelCounter ).str();
 }
 
-std::string call( const std::string _function ) {
+std::string callInsn( const std::string _function ) {
   return ( boost::format( "  call %1%\n" ) % _function ).str();
 }
 

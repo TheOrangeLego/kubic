@@ -16,6 +16,18 @@ typedef std::tuple<std::string, ValueType> UnaryOperatorValue;
 typedef std::tuple<std::string, ValueType, ValueType> BinaryOperatorValue;
 
 const std::map<BinaryOperatorValue, ValueType> DERIVED_BINARY_VALUES = {
+  /* derived boolean binary values */
+  { BinaryOperatorValue( "&&", ValueType::ValueBoolean, ValueType::ValueBoolean ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( "||", ValueType::ValueBoolean, ValueType::ValueBoolean ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( "^", ValueType::ValueBoolean, ValueType::ValueBoolean ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( "<", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( ">", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( "<=", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( ">=", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( "==", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueBoolean },
+  { BinaryOperatorValue( "!=", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueBoolean },
+
+  /* derived constant binary values */
   { BinaryOperatorValue( "+", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueConstant },
   { BinaryOperatorValue( "-", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueConstant },
   { BinaryOperatorValue( "*", ValueType::ValueConstant, ValueType::ValueConstant ), ValueType::ValueConstant },

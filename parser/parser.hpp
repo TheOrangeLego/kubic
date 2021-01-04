@@ -52,6 +52,10 @@ Node* nodeifyFunctionCall( std::queue<Token*>& _tokens, Token* _token ) {
   Token* openArgument = _tokens.front();
   _tokens.pop();
 
+  if ( openArgument->getText() != "(" ) {
+    log( Severity::Error, openArgument->getPosition(), ERR_EXPECTED_OPEN_PAREN, openArgument->getText() );
+  }
+
   int innerExpressionCount = 0;
 
   std::queue<Token*> argumentTokens;
@@ -71,6 +75,10 @@ Node* nodeifyFunctionCall( std::queue<Token*>& _tokens, Token* _token ) {
 
   Token* closeArgument = _tokens.front();
   _tokens.pop();
+
+  if ( closeArgument->getText() != ")" ) {
+    log( Severity::Error, closeArgument->getPosition(), ERR_EXPECTED_CLOSE_PAREN, closeArgument->getText() );
+  }
 
   node = new FunctionCallNode( _token->getPosition(), _token->getText(), arguments );
 
@@ -122,7 +130,7 @@ Node* nodeifyArithmetic( std::queue<Token*>& _tokens ) {
   std::stack<Node*> operands;
   std::stack<Token*> operators;
 
-  Token* top = _tokens.front();
+  Token* top = _tokens.empty() ? nullptr : _tokens.front();
 
   while ( continueParsing && top ) {
     if ( top->getType() == TokenType::TokenBoolean ) {
@@ -139,7 +147,6 @@ Node* nodeifyArithmetic( std::queue<Token*>& _tokens ) {
         operands.push( nodeifyFunctionCall( _tokens, variable ) );
       } else {
         operands.push( new VariableNode( variable->getText(), variable->getPosition() ) );
-        _tokens.pop();
       }
     } else if ( top->getType() == TokenType::TokenOperator ) {
       if ( !operators.empty() ) {
@@ -222,11 +229,19 @@ Node* nodeifyBinding( std::queue<Token*>& _tokens ) {
   Token* typeDefine = _tokens.front();
   _tokens.pop();
 
+  if ( typeDefine->getText() != "::" ) {
+    log( Severity::Error, typeDefine->getPosition(), ERR_EXPECTED_TYPE_DEFINER, typeDefine->getText() );
+  }
+
   Token* type = _tokens.front();
   _tokens.pop();
 
   Token* assignOperator = _tokens.front();
   _tokens.pop();
+
+  if ( assignOperator->getText() != "=" ) {
+    log( Severity::Error, assignOperator->getPosition(), ERR_EXPECTED_ASSIGN_OP, assignOperator->getText() );
+  }
 
   Node* bindingExpression = nodeify( _tokens );
 
@@ -240,7 +255,6 @@ Node* nodeifyBinding( std::queue<Token*>& _tokens ) {
     );
   }
 
-  addVariable( variable->getText(), bindingExpression->getValueType() );
   node = new BindingNode( variable->getText(), variable->getPosition(), bindingExpression );
 
   return node;
@@ -298,7 +312,7 @@ Node* nodeify( std::queue<Token*>& _tokens ) {
   switch ( head->getType() ) {
     case TokenType::TokenNewline:
       _tokens.pop();
-      node = nodeify( _tokens );
+      node = _tokens.empty() ? nullptr : nodeify( _tokens );
       break;
     case TokenType::TokenBoolean:
     case TokenType::TokenConstant:

@@ -39,7 +39,7 @@ enum ValueType {
 
 std::map<std::string, ValueType> VALUE_TYPE_NAME = {
   { "boolean", ValueType::ValueBoolean },
-  { "number", ValueType::ValueConstant },
+  { "integer", ValueType::ValueConstant },
 };
 
 ValueType translateToValueType( const std::string _type ) {
@@ -59,7 +59,7 @@ std::string translateFromValueType( const ValueType _type ) {
       return "boolean";
       break;
     case ValueConstant:
-      return "number";
+      return "integer";
       break;
     default:
       return "undefined";

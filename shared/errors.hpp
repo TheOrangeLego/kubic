@@ -13,9 +13,19 @@ const std::string
   WARN_ = "";
 
 const std::string
-  ERR_INVALID_TOKEN = "encountered invalid token %1%",
-  ERR_BINARY_VALUES_NOT_SUPPORTED = "operator %1% does not support operation on left %2% and right %3% values",
-  ERR_BINDING_TYPE_MISMATCH = "binding expression type %1% does not match expected type %2%";
+  ERR_INVALID_TOKEN = "encountered invalid token '%1%'",
+
+  /* binary op */
+  ERR_BINARY_VALUES_NOT_SUPPORTED = "operator '%1%' does not support operation on left '%2%' and right '%3%' values",
+
+  /* binding */
+  ERR_BINDING_TYPE_MISMATCH = "binding expression type '%1%' does not match expected type '%2%'",
+  ERR_EXPECTED_TYPE_DEFINER = "expected token '::', instead found token '%1%'",
+  ERR_EXPECTED_ASSIGN_OP = "expected operator '=', instead found token '%1%'",
+
+  /* function call */
+  ERR_EXPECTED_OPEN_PAREN = "expected token '(', instead found token '%1%'",
+  ERR_EXPECTED_CLOSE_PAREN = "expected token ')', instead found token '%1%'";
 
 enum Severity {
   Error,
