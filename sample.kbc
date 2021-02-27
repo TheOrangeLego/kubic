@@ -1,85 +1,54 @@
-#
-# TODO -- find a way to generate import address
-#
-import Metadata from
-import Player as FormerPlayer from
-import Player from
+##
+# Purpose -
+#   this file serves as a syntax example for Kubic. In particular, this file imports other modules, loads and reads
+#   data from local files, creates a class that holds said information, and prints it to stdout, while writing log
+#   debugging messages to stderr
+##
 
-#
-# Point -
-#  contains a paired x, y coordinate location
-#
-class Point {
+import School from 'modules/school'
+
+import SchoolDistrict from 'api/schoolDistrict'
+
+private class Student {
   define
-    x :: number,
-    y :: number
+    private id :: number,
+    private name :: string,
+    private gender :: number,
+    private school :: School
 
-  constructor( x :: number, y :: number ) {
-    this.setPoint( x, y )
+  constructor( id :: number, name :: string, gender :: number, school :: School ) {
+    this.id = id
+    this.name = name
+    this.gender = gender
+    this.school = school
   }
 
-  function getX() :: number {
-    return this.x
+  private function formatGender() :: string {
+    return ['M', 'F', 'Tm', 'Tf', 'NB', 'X'].at( this.gender ) 
   }
 
-  funciton getY() :: number {
-    return this.y
-  }
+  function print() :: string {
+    define
+      gender :: string = formatGender(),
+      school :: string = this.school.getName()
 
-  function setPoint( x :: number, y :: number ) :: void {
-    this.x = x
-    this.y = y
-  }
-}
-
-#
-# Box -
-#   Object that draws a box through four (4) points
-#
-class Box {
-  define
-    pointA :: Point,
-    pointB :: Point,
-    pointC :: Point,
-    pointD :: Point
-
-  constructor( a :: Point, b :: Point, c :: Point, d :: Point ) {
-    this.pointA = a
-    this.printB = b
-    this.pointC = c
-    this.pointD = d
+    return stringFormat( '%this.id | %this.name | %gender | %school' )
   }
 }
 
-function sum( x :: number, y :: number ) :: number {
-  return x + y
-}
+function main( args :: Map<string, string> ) {
+  if ( args.contains( 'district' ) {
+    define
+      district :: SchoolDistrict = fetchSchoolDistrict( args.get( 'district' ) ),
+      students :: Student[] = district.generateStudents( Student::constructor )
 
-function multiply( x :: number, y :: number ) :: number {
-  return x * y
-}
+    print( 'ID | NAME | GENDER | SCHOOL' )
 
-function logResults( message :: string, a :: number, b :: number, c :: number ) :: void {
-  define
-    sum :: number = sum( a, b ),
-    product :: number = multiply( b, c )
-
-  log( message, sum, product )
-}
-
-define
-  a :: number = 10,
-  b :: number = 20,
-  c :: number = 30,
-  message :: string = "The results for this program are %1 and %2."
-
-logResults( message, a, b, c )
-
-if ( a > b ) {
-  log( "a is greater than b" )
-} elif ( b > a ) {
-  log( "b is greater than a" )
-} else {
-  log( "They are both the same" )
+    for ( student : students ) {
+      print( student.print() )
+    }
+  } else {
+    print( 'No school was specified.' )
+  }
 }
 
